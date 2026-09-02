@@ -1,0 +1,4 @@
+# Never commit database secrets
+fitfuel_private.php
+.env
+.env.*

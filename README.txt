@@ -1,18 +1,18 @@
-FitFuel PWA v5
+FitFuel
 
-Added:
-- Shared recipe database
-- iPhone Notes recipe import via copy/paste
-- Website recipe import workflow with copy/paste fallback
-- Multiple family profiles with separate meal plans, food intake, water and progress
-- Weekly automatic meal planning
-- Per-user grocery checklist
-- Backup/restore
+Database-backed FitFuel application with:
+- User registration/login and PHP sessions
+- User profiles
+- Food logging
+- Barcode lookup via backend
+- Recipes and meal planning
+- Progress tracking
+- Workout logging
 
-The workout system is intentionally unchanged for the next version.
+Deployment
+- Repository deploys to Hostinger public_html from main.
+- Database credentials are NOT stored in this repository.
+- Hostinger must contain fitfuel_private.php one level above public_html.
+- Run FitFuel_database_upgrade.sql in the Hostinger MySQL database before using the upgraded application.
 
-Important architecture notes:
-- Current PWA stores data locally on the device.
-- True multi-device family accounts/login require a backend/database and authentication.
-- True automatic URL recipe extraction requires a hosted backend because many recipe sites block browser cross-origin requests.
-- Grocery aggregation currently counts repeated ingredient entries rather than performing unit-aware quantity math.
+Do not commit fitfuel_private.php, .env files, or database passwords.
