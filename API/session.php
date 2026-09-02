@@ -25,8 +25,11 @@ function family_id_for_user(mysqli $conn,int $uid): ?int {
     $st->bind_param("i",$uid);$st->execute();$r=$st->get_result()->fetch_assoc();$st->close();
     return $r?(int)$r['family_id']:null;
 }
-?>
-<?php
+// Included endpoints need the helpers above, but must run their own request handlers.
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') !== __FILE__) {
+    return;
+}
+
 start_fitfuel_session();
 $uid=(int)($_SESSION['user_id']??0);
 if($uid<1) json_response(['success'=>false,'authenticated'=>false]);
