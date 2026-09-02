@@ -27,7 +27,7 @@ async function stopCamera(){const scanner=qr;qr=null;if(!scanner)return;try{awai
 function preferredCamera(cameras){return cameras.find(c=>/^(back|rear) camera$/i.test(c.label))||cameras.find(c=>/back|rear|environment/i.test(c.label)&&!/ultra|tele|0[.,]5/i.test(c.label))}
 function scan(){
  const epoch=++scanEpoch;
- app.innerHTML=`<div class="modal"><div class="modalbox"><h2>Scan Food Barcode</h2><p class="muted">Hold the barcode about 6–12 inches away in good light. Move back if it looks blurry; use zoom if available.</p><label for="scanCamera">Camera</label><select id="scanCamera" onchange="startQR(this.value)" disabled><option>Starting camera…</option></select><div id="reader" style="margin-top:10px"></div><p id="scanStatus" class="muted" role="status" aria-live="polite">Starting camera…</p><div id="scanZoomBox" hidden><label for="scanZoom">Zoom — keep the whole barcode visible</label><input id="scanZoom" type="range" onchange="setScanZoom(this.value)"></div><button id="scanFocus" class="secondary" hidden onclick="focusScan()">Refocus</button><div class="row" style="margin-top:10px"><button class="secondary" onclick="closeScan()">Cancel</button><button class="secondary" onclick="barcodeManual()">Enter Barcode Manually</button></div><p class="muted">Nutrition comes from Open Food Facts; check it against the package label.</p></div></div>`;
+ app.innerHTML=`<div class="modal"><div class="modalbox"><h2>Scan Food Barcode</h2><p class="muted">Scans automatically — no shutter button needed. Hold the barcode about 6–12 inches away in good light, with all bars and both white edges visible.</p><label for="scanCamera">Camera</label><select id="scanCamera" onchange="startQR(this.value)" disabled><option>Starting camera…</option></select><div id="reader" style="margin-top:10px"></div><p id="scanStatus" class="muted" role="status" aria-live="polite">Starting camera…</p><div id="scanZoomBox" hidden><label for="scanZoom">Zoom — keep the whole barcode visible</label><input id="scanZoom" type="range" onchange="setScanZoom(this.value)"></div><button id="scanFocus" class="secondary" hidden onclick="focusScan()">Refocus</button><div class="row" style="margin-top:10px"><button class="secondary" onclick="closeScan()">Cancel</button><button class="secondary" onclick="barcodeManual()">Enter Barcode Manually</button></div><p class="muted">Nutrition comes from Open Food Facts; check it against the package label.</p></div></div>`;
  startQR("",epoch);
 }
 function startQR(cameraId="",epoch=++scanEpoch){
@@ -56,8 +56,18 @@ function startQR(cameraId="",epoch=++scanEpoch){
     try{await scanner.applyVideoConstraints({advanced:[{focusMode:"continuous"}]});scanElement("scanFocus").hidden=false}catch(e){}
    }
    if(epoch!==scanEpoch)return;
-   if(caps.zoom&&caps.zoom.max>caps.zoom.min){const z=scanElement("scanZoom");z.min=caps.zoom.min;z.max=Math.min(caps.zoom.max,Math.max(caps.zoom.min,4));z.step=caps.zoom.step||.1;z.value=scanner.getRunningTrackSettings?.().zoom||caps.zoom.min;scanElement("scanZoomBox").hidden=false}
-   scanMessage("Keep the barcode steady. If it stays blurry, move back or choose another camera.");
+   if(caps.zoom&&caps.zoom.max>caps.zoom.min){
+    const z=scanElement("scanZoom"),range=caps.zoom;
+    z.min=range.min;z.max=Math.min(range.max,Math.max(range.min,4));z.step=range.step||.1;
+    // Start 50% closer when supported; stay within the camera's zoom range.
+    const step=range.step||.1;
+    const preferred=Math.min(range.max,Math.max(range.min,1.5));
+    const initial=Math.min(range.max,Number((range.min+Math.ceil((preferred-range.min)/step-1e-9)*step).toFixed(6)));
+    try{await scanner.applyVideoConstraints({advanced:[{zoom:initial}]})}catch(e){}
+    if(epoch!==scanEpoch)return;
+    z.value=scanner.getRunningTrackSettings?.().zoom??range.min;scanElement("scanZoomBox").hidden=false;
+   }
+   scanMessage("Scanning automatically… Hold the entire barcode steady. Adjust zoom if needed.");
   }catch(e){await stopCamera();if(epoch===scanEpoch){picker.disabled=picker.options.length<2;scanMessage("Camera could not start. Allow camera access, choose another camera, or enter the barcode manually.")}}
  });return scanQueue;
 }
