@@ -3,11 +3,15 @@ require_once 'session.php';require_login();
 if($_SERVER['REQUEST_METHOD']!=='GET')json_response(['success'=>false,'message'=>'GET requests only.'],405);
 $barcode=preg_replace('/\D+/','',$_GET['barcode']??'');
 if($barcode===''||strlen($barcode)<8||strlen($barcode)>18)json_response(['success'=>false,'message'=>'Enter a valid product barcode.'],400);
-$url='https://world.openfoodfacts.org/api/v3/product/'.rawurlencode($barcode).'.json';$ch=curl_init($url);
-curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>15,CURLOPT_HTTPHEADER=>['User-Agent: FitFuel/1.0 (food barcode lookup)']]);
+$url='https://world.openfoodfacts.org/api/v2/product/'.rawurlencode($barcode).'.json';$ch=curl_init($url);
+curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>15,CURLOPT_HTTPHEADER=>['User-Agent: FitFuel/1.0 (https://fitfuel.bylerfinancial.com)']]);
 $raw=curl_exec($ch);$http=curl_getinfo($ch,CURLINFO_HTTP_CODE);curl_close($ch);
 if($raw===false||$http<200||$http>=300)json_response(['success'=>false,'message'=>'Food database lookup failed. Try again or enter the food manually.'],502);
-$d=json_decode($raw,true);if(!is_array($d)||(int)($d['status']??0)!==1)json_response(['success'=>false,'found'=>false,'message'=>'That barcode was not found in Open Food Facts.'],404);
+// API v2 uses numeric status 1/0; API v3 uses a different response contract.
+$d=json_decode($raw,true);
+if(!is_array($d)||!isset($d['status']))json_response(['success'=>false,'message'=>'Open Food Facts returned an invalid response. Please try again.'],502);
+if($d['status']===0)json_response(['success'=>false,'found'=>false,'message'=>'That barcode was not found in Open Food Facts.'],404);
+if($d['status']!==1||!isset($d['product'])||!is_array($d['product']))json_response(['success'=>false,'message'=>'Open Food Facts returned an unexpected response. Please try again.'],502);
 $p=$d['product']??[];$n=$p['nutriments']??[];$ss=trim((string)($p['serving_size']??''));$sg=null;
 if(preg_match('/([0-9]+(?:[.,][0-9]+)?)\s*g\b/i',$ss,$m))$sg=(float)str_replace(',','.',$m[1]);
 function nv($a,$keys){foreach($keys as $k)if(isset($a[$k])&&is_numeric($a[$k]))return(float)$a[$k];return 0.0;}
