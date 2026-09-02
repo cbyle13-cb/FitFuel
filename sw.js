@@ -1,1 +1,12 @@
-const C="fitfuel-v5";self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(["./","./index.html","./manifest.json"]))));self.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+// Retire the legacy cache-first worker: authenticated FitFuel requires live responses.
+self.addEventListener("install", event => {
+  event.waitUntil(self.skipWaiting());
+});
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    await caches.delete("fitfuel-v5");
+    await self.clients.claim();
+    await self.registration.unregister();
+  })());
+});
+// No fetch handler: page and API requests go directly to the network.
