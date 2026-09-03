@@ -1,0 +1,13 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {suggest,metrics}=require('../workout-core.js');
+const target={weight:20,min:8,max:12,increment:5,cap:50,sets:[{},{},{}]};
+const previous=(reps,effort='right',weight=20)=>({effort,sets:reps.map(reps=>({weight,reps,done:true}))});
+test('first session uses the personal starting weight',()=>assert.equal(suggest(target,null).weight,20));
+test('all sets at the top raises weight once and resets reps',()=>{const r=suggest(target,previous([12,12,12]));assert.equal(r.weight,25);assert.equal(r.reps,8)});
+test('unfinished sets never cause an increase',()=>{const p=previous([12,12,12]);p.sets[2].done=false;assert.equal(suggest(target,p).weight,20)});
+test('hard, unknown and painful sessions never increase load',()=>{for(const effort of ['hard','unknown','pain'])assert.equal(suggest(target,previous([12,12,12],effort)).weight,20)});
+test('adds reps based on the weakest completed set',()=>assert.equal(suggest(target,previous([11,10,9])).reps,10));
+test('equipment cap and fixed kettlebell loads are respected',()=>{assert.equal(suggest({...target,cap:20},previous([12,12,12])).weight,20);assert.equal(suggest({...target,increment:0},previous([12,12,12])).weight,20)});
+test('new set count requires repeating the load',()=>assert.equal(suggest({...target,sets:[{},{},{},{}]},previous([12,12,12])).weight,20));
+test('timed exercises increase seconds rather than weight',()=>{const t={...target,min:20,max:40};assert.equal(suggest(t,previous([25,25,25]),true).reps,30);assert.equal(suggest(t,previous([40,40,40]),true).weight,20)});
+test('charts exclude uncompleted sets',()=>assert.deepEqual(metrics({sets:[{weight:20,reps:10,done:true},{weight:50,reps:12,done:false}]}),{sets:1,reps:10,weight:20,volume:200}));
+test('mixed loads do not trigger weight progression',()=>{const p=previous([12,12,12]);p.sets[0].weight=25;assert.equal(suggest(target,p).weight,20)});
