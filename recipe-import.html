@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Import Recipe • FitFuel</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#f4f6f5;color:#17211b}.wrap{max-width:760px;margin:auto;padding:20px 16px 50px}.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 5px 24px #0001}h1{margin:0 0 6px;font-size:28px}.muted{color:#647069;margin-top:0}label{display:block;font-weight:650;margin:14px 0 6px}input,textarea{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #ccd3cf;border-radius:11px;background:#fff;color:#17211b}textarea{min-height:120px;resize:vertical}button{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:750;background:#1d6d4c;color:white;margin-top:12px}.secondary{background:#e8eeeb;color:#17211b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{margin:12px 0;padding:11px;border-radius:10px;background:#eef2f0}.hidden{display:none}@media(prefers-color-scheme:dark){body{background:#111714;color:#edf3ef}.card,input,textarea{background:#1b2420;color:#edf3ef}.card{box-shadow:none}.muted{color:#aab7b0}.secondary{background:#303c36;color:#edf3ef}.status{background:#26312c}}
+</style>
+</head>
+<body><main class="wrap"><section class="card">
+<h1>Import Recipe</h1><p class="muted">Share a recipe webpage from Safari, review what FitFuel found, then save it.</p>
+<div id="status" class="status">Ready to import.</div>
+<label for="url">Recipe webpage</label><input id="url" type="url" inputmode="url" placeholder="https://example.com/recipe">
+<button id="importBtn">Import from Webpage</button>
+<div id="form" class="hidden">
+<label for="name">Recipe name</label><input id="name">
+<label for="ingredients">Ingredients — one per line</label><textarea id="ingredients"></textarea>
+<label for="instructions">Instructions</label><textarea id="instructions"></textarea>
+<div class="grid"><div><label for="servings">Servings</label><input id="servings" type="number" min="0.1" step="0.1"></div><div><label for="calories">Calories / serving</label><input id="calories" type="number" step="0.1"></div></div>
+<div class="grid"><div><label for="protein">Protein (g)</label><input id="protein" type="number" step="0.1"></div><div><label for="carbs">Carbs (g)</label><input id="carbs" type="number" step="0.1"></div></div>
+<div class="grid"><div><label for="fat">Fat (g)</label><input id="fat" type="number" step="0.1"></div><div><label for="fiber">Fiber (g)</label><input id="fiber" type="number" step="0.1"></div></div>
+<div class="grid"><div><label for="prep">Prep minutes</label><input id="prep" type="number"></div><div><label for="cook">Cook minutes</label><input id="cook" type="number"></div></div>
+<label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
+<button id="saveBtn">Save to FitFuel Recipes</button><button class="secondary" type="button" onclick="location.href='./'">Back to FitFuel</button>
+</div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id), status=$('status'); let current={};
+const params=new URLSearchParams(location.search); const shared=params.get('url')||params.get('text')||''; if(shared) $('url').value=shared.trim();
+function message(t){status.textContent=t}
+async function importRecipe(){
+ const url=$('url').value.trim(); if(!url){message('Paste or share a recipe webpage first.');return}
+ message('Reading recipe…'); $('importBtn').disabled=true;
+ try{
+  const r=await fetch('API/import_recipe.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({url})});
+  const j=await r.json(); if(!r.ok||!j.success) throw new Error(j.message||'Import failed.'); current=j.recipe;
+  $('name').value=current.recipe_name||'';$('ingredients').value=(current.ingredients||[]).join('\n');$('instructions').value=current.instructions||'';$('servings').value=current.servings||1;
+  $('calories').value=current.calories_per_serving||0;$('protein').value=current.protein_per_serving||0;$('carbs').value=current.carbs_per_serving||0;$('fat').value=current.fat_per_serving||0;$('fiber').value=current.fiber_per_serving||0;
+  $('prep').value=current.prep_time_minutes??'';$('cook').value=current.cook_time_minutes??'';$('description').value=current.description||'';$('form').classList.remove('hidden');message('Recipe found. Review it before saving.');
+ }catch(e){ if(String(e.message).toLowerCase().includes('login')||String(e.message).includes('401')) message('Please open FitFuel and sign in, then run the shortcut again.'); else message(e.message); }
+ finally{$('importBtn').disabled=false}
+}
+async function saveRecipe(){
+ const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),source_type:'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
+ if(!payload.recipe_name){message('Recipe name is required.');return} $('saveBtn').disabled=true;message('Saving recipe…');
+ try{const r=await fetch('API/api.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.message||'Could not save recipe.');message('Saved! The recipe is now in FitFuel.');$('saveBtn').textContent='Saved ✓';}
+ catch(e){message(e.message)}finally{$('saveBtn').disabled=false}
+}
+$('importBtn').addEventListener('click',importRecipe);$('saveBtn').addEventListener('click',saveRecipe);if(shared)setTimeout(importRecipe,150);
+</script></body></html>
