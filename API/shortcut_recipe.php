@@ -1,5 +1,6 @@
 <?php
 require_once 'session.php';
+require_once 'recipe_importer.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['success' => false, 'message' => 'POST requests only.'], 405);
@@ -83,6 +84,23 @@ if (!$tokenRow || (int)$tokenRow['is_active'] !== 1) {
 }
 $uid = (int)$tokenRow['user_id'];
 $tokenId = (int)$tokenRow['id'];
+
+// New lightweight Shortcut flow: send only import_key + url. Keep the
+// existing structured payload path below for backward compatibility.
+$sharedUrl = trim((string)($in['url'] ?? $in['recipe_url'] ?? ''));
+if ($sharedUrl === '' && empty($in['recipe_name']) && !empty($in['source_url'])) {
+    $sharedUrl = trim((string)$in['source_url']);
+}
+if ($sharedUrl !== '') {
+    try {
+        $extracted = recipe_import_from_url($sharedUrl);
+        $in = array_merge($in, $extracted);
+        $in['source_url'] = $extracted['source_url'];
+        $in['source_type'] = 'web';
+    } catch (RecipeImportException $e) {
+        json_response(['success'=>false,'message'=>$e->getMessage()],$e->httpStatus);
+    }
+}
 
 $name = clean_string($in['recipe_name'] ?? $in['title'] ?? '', 255);
 if ($name === '') {

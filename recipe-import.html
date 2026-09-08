@@ -9,10 +9,10 @@
 </style>
 </head>
 <body><main class="wrap"><section class="card">
-<h1>Import Recipe</h1><p class="muted">Import from a webpage or receive a structured recipe from an iPhone Shortcut, review it, then save it.</p>
+<h1>Import Recipe</h1><p class="muted">Paste or share a recipe webpage. FitFuel reads the recipe on the server so no ChatGPT Shortcut step is needed.</p>
 <div id="status" class="status">Ready to import.</div>
 <label for="url">Recipe webpage</label><input id="url" type="url" inputmode="url" placeholder="https://example.com/recipe">
-<p class="source-note">When a Shortcut sends a structured recipe, this source link is preserved automatically.</p>
+<p class="source-note">You can review every field before saving it to FitFuel.</p>
 <button id="importBtn">Import from Webpage</button>
 <div id="form" class="hidden">
 <label for="name">Recipe name</label><input id="name">
@@ -95,7 +95,7 @@ async function importRecipe(){
  finally{$('importBtn').disabled=false}
 }
 async function saveRecipe(){
- const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),source_type:'shortcut',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
+ const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
  if(!payload.recipe_name){message('Recipe name is required.');return} $('saveBtn').disabled=true;message('Saving recipe…');
  try{const r=await fetch('API/api.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.message||'Could not save recipe.');message('Saved! The recipe is now in FitFuel.');$('saveBtn').textContent='Saved ✓';}
  catch(e){message(e.message)}finally{$('saveBtn').disabled=false}

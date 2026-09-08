@@ -12,12 +12,12 @@
 <div class="wrap">
   <div class="card">
     <h1>FitFuel Recipe Shortcut</h1>
-    <p>Create a private import key for the iPhone Shortcut. The key lets the Shortcut add recipes to your FitFuel account without storing your FitFuel password.</p>
+    <p>Create a private import key for the iPhone Shortcut. The new Shortcut sends only the shared webpage URL to FitFuel; extraction now runs securely on the server without ChatGPT.</p>
     <button id="createBtn" class="btn">Create Import Key</button>
     <div id="status" class="status"></div>
     <div id="tokenBox" class="token"></div>
     <button id="copyBtn" class="btn secondary" style="display:none">Copy Import Key</button>
-    <p class="small">Keep this key private. If you create a replacement key later, you can update the Text action in your Shortcut.</p>
+    <p class="small">Keep this key private. Send it as <b>import_key</b> in a JSON request to <b>API/shortcut_recipe.php</b>, along with a <b>url</b> field containing the shared Safari URL. Existing structured-recipe Shortcuts remain supported.</p>
   </div>
 </div>
 <script>
