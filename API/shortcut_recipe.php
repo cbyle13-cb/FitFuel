@@ -24,7 +24,9 @@ function ensure_shortcut_tokens_table(mysqli $conn): void {
 }
 
 function shortcut_token_from_request(array $in): string {
-    $token = trim((string)($in['import_token'] ?? ''));
+    // "import_key" is the user-facing Shortcuts field name. Keep
+    // "import_token" for backward compatibility with earlier builds.
+    $token = trim((string)($in['import_key'] ?? $in['import_token'] ?? ''));
     if ($token !== '') return $token;
     $auth = trim((string)($_SERVER['HTTP_AUTHORIZATION'] ?? ''));
     if (preg_match('/^Bearer\s+(.+)$/i', $auth, $m)) return trim($m[1]);
@@ -37,6 +39,29 @@ function clean_string($value, int $max = 10000): string {
     return $s;
 }
 
+function shortcut_list($value): array {
+    if (is_array($value)) return $value;
+    if (!is_string($value)) return [];
+    $text = trim($value);
+    if ($text === '') return [];
+
+    // Shortcuts may serialize a Dictionary list into a JSON string when the
+    // request-body field is configured as Text. Accept that form directly.
+    if (($text[0] ?? '') === '[') {
+        $decoded = json_decode($text, true);
+        if (is_array($decoded)) return $decoded;
+    }
+
+    // It may instead coerce a list to lines. Prefer lines, then fall back to
+    // comma-delimited text for simple lists.
+    $lines = preg_split('/\r\n|\r|\n/', $text, -1, PREG_SPLIT_NO_EMPTY);
+    if (count($lines) > 1) return $lines;
+    if (strpos($text, ',') !== false) {
+        return preg_split('/\s*,\s*/', $text, -1, PREG_SPLIT_NO_EMPTY);
+    }
+    return [$text];
+}
+
 $in = json_decode(file_get_contents('php://input'), true);
 if (!is_array($in)) {
     json_response(['success' => false, 'message' => 'Invalid JSON request.'], 400);
@@ -45,7 +70,7 @@ if (!is_array($in)) {
 ensure_shortcut_tokens_table($conn);
 $rawToken = shortcut_token_from_request($in);
 if ($rawToken === '' || strlen($rawToken) < 32) {
-    json_response(['success' => false, 'message' => 'A valid FitFuel import token is required.'], 401);
+    json_response(['success' => false, 'message' => 'A valid FitFuel import key is required.'], 401);
 }
 $tokenHash = hash('sha256', $rawToken);
 $st = $conn->prepare("SELECT t.id,t.user_id,u.is_active FROM shortcut_import_tokens t JOIN users u ON u.id=t.user_id WHERE t.token_hash=? AND t.revoked_at IS NULL LIMIT 1");
@@ -54,7 +79,7 @@ $st->execute();
 $tokenRow = $st->get_result()->fetch_assoc();
 $st->close();
 if (!$tokenRow || (int)$tokenRow['is_active'] !== 1) {
-    json_response(['success' => false, 'message' => 'FitFuel import token is invalid or revoked.'], 401);
+    json_response(['success' => false, 'message' => 'FitFuel import key is invalid or revoked.'], 401);
 }
 $uid = (int)$tokenRow['user_id'];
 $tokenId = (int)$tokenRow['id'];
@@ -64,11 +89,7 @@ if ($name === '') {
     json_response(['success' => false, 'message' => 'Recipe name is required.'], 400);
 }
 
-$ingredientsIn = $in['ingredients'] ?? [];
-if (is_string($ingredientsIn)) {
-    $ingredientsIn = preg_split('/\r\n|\r|\n/', $ingredientsIn, -1, PREG_SPLIT_NO_EMPTY);
-}
-if (!is_array($ingredientsIn)) $ingredientsIn = [];
+$ingredientsIn = shortcut_list($in['ingredients'] ?? []);
 $ingredients = [];
 foreach ($ingredientsIn as $ingredient) {
     $ingredient = clean_string($ingredient, 1000);
@@ -81,18 +102,15 @@ if (!$ingredients) {
 if (count($ingredients) > 250) $ingredients = array_slice($ingredients, 0, 250);
 $ingredientsJson = json_encode($ingredients, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-$instructionsIn = $in['instructions'] ?? $in['steps'] ?? '';
-if (is_array($instructionsIn)) {
-    $steps = [];
-    foreach ($instructionsIn as $step) {
-        $step = clean_string($step, 3000);
-        $step = preg_replace('/^\s*\d+[\.)]\s*/u', '', $step);
-        if ($step !== '') $steps[] = $step;
-    }
-    $instructions = implode("\n", $steps);
-} else {
-    $instructions = clean_string($instructionsIn, 30000);
+$instructionsRaw = $in['instructions'] ?? $in['steps'] ?? '';
+$steps = shortcut_list($instructionsRaw);
+$cleanSteps = [];
+foreach ($steps as $step) {
+    $step = clean_string($step, 3000);
+    $step = preg_replace('/^\s*\d+[\.)]\s*/u', '', $step);
+    if ($step !== '') $cleanSteps[] = $step;
 }
+$instructions = implode("\n", $cleanSteps);
 if ($instructions === '') {
     json_response(['success' => false, 'message' => 'Recipe instructions are required.'], 400);
 }
