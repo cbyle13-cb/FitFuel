@@ -27,3 +27,13 @@ test('remote fetch validates every redirect and pins DNS resolution', () => {
   assert.match(importer, /recipe_import_validate_url\(\$url\)/);
   assert.match(importer, /FILTER_FLAG_NO_PRIV_RANGE \| FILTER_FLAG_NO_RES_RANGE/);
 });
+
+test('social imports fall back to caption text with recipe sections', () => {
+  const importer = read('API/recipe_importer.php');
+  const endpoint = read('API/shortcut_recipe.php');
+  assert.match(importer, /function recipe_import_from_text/);
+  assert.match(importer, /ingredients\?/i);
+  assert.match(importer, /instructions\?/i);
+  assert.match(endpoint, /\$in\['text'\].*\$in\['caption'\].*\$in\['recipe_text'\]/s);
+  assert.match(endpoint, /recipe_import_from_text\(\$sharedText,\$sharedUrl\)/);
+});

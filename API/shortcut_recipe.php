@@ -88,6 +88,7 @@ $tokenId = (int)$tokenRow['id'];
 // New lightweight Shortcut flow: send only import_key + url. Keep the
 // existing structured payload path below for backward compatibility.
 $sharedUrl = trim((string)($in['url'] ?? $in['recipe_url'] ?? ''));
+$sharedText = trim((string)($in['text'] ?? $in['caption'] ?? $in['recipe_text'] ?? ''));
 if ($sharedUrl === '' && empty($in['recipe_name']) && !empty($in['source_url'])) {
     $sharedUrl = trim((string)$in['source_url']);
 }
@@ -98,8 +99,13 @@ if ($sharedUrl !== '') {
         $in['source_url'] = $extracted['source_url'];
         $in['source_type'] = 'web';
     } catch (RecipeImportException $e) {
-        json_response(['success'=>false,'message'=>$e->getMessage()],$e->httpStatus);
+        if($sharedText==='')json_response(['success'=>false,'message'=>$e->getMessage()],$e->httpStatus);
+        try{$in=array_merge($in,recipe_import_from_text($sharedText,$sharedUrl));}
+        catch(RecipeImportException $textError){json_response(['success'=>false,'message'=>$e->getMessage().' '.$textError->getMessage()],422);}
     }
+} elseif($sharedText!==''&&empty($in['recipe_name'])) {
+    try{$in=array_merge($in,recipe_import_from_text($sharedText));}
+    catch(RecipeImportException $e){json_response(['success'=>false,'message'=>$e->getMessage()],$e->httpStatus);}
 }
 
 $name = clean_string($in['recipe_name'] ?? $in['title'] ?? '', 255);

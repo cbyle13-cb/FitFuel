@@ -60,6 +60,26 @@ function recipe_import_instruction_text($value): string { if(is_string($value))r
 function recipe_import_minutes($value): ?int { if(!is_string($value)||$value==='')return null;try{$d=new DateInterval($value);return($d->d*1440)+($d->h*60)+$d->i;}catch(Throwable $e){return null;} }
 function recipe_import_number($value): float { if($value===null||$value==='')return 0;if(is_numeric($value))return(float)$value;return preg_match('/-?\d+(?:\.\d+)?/',(string)$value,$m)?(float)$m[0]:0; }
 
+function recipe_import_from_text(string $rawText, string $sourceUrl=''): array {
+    $text=trim(str_replace(["\r\n","\r"],"\n",strip_tags($rawText)));
+    if($text==='')throw new RecipeImportException('No recipe caption or text was shared.',400);
+    if(strlen($text)>60000)$text=substr($text,0,60000);
+    $lines=array_values(array_filter(array_map('trim',explode("\n",$text)),fn($line)=>$line!==''));
+    $ingredientHeader='/^(?:[🍴🥣📝]\s*)?(?:ingredients?|what you(?:’|\')?ll need|you(?:’|\')?ll need)\s*:?[\s]*$/iu';
+    $instructionHeader='/^(?:[👩‍🍳🧑‍🍳🔥📝]\s*)?(?:directions?|instructions?|method|steps?|how to make(?: it)?)\s*:?[\s]*$/iu';
+    $section='';$ingredients=[];$steps=[];$title='';
+    foreach($lines as$line){
+        if(preg_match($ingredientHeader,$line)){$section='ingredients';continue;}
+        if(preg_match($instructionHeader,$line)){$section='instructions';continue;}
+        if($title===''&&!filter_var($line,FILTER_VALIDATE_URL)&&!preg_match('/^https?:\/\//i',$line))$title=preg_replace('/^[#*\s]+|[#*\s]+$/u','',$line);
+        if($section==='ingredients'){$item=trim(preg_replace('/^[\s\-•*✅☑️]+/u','',$line));if($item!=='')$ingredients[]=$item;}
+        elseif($section==='instructions'){$step=trim(preg_replace('/^\s*(?:step\s*)?\d+[\.)\-:]?\s*/iu','',$line));if($step!==''&&!preg_match('/^(?:#\w+\s*)+$/u',$step))$steps[]=$step;}
+    }
+    if(!$ingredients||!$steps)throw new RecipeImportException('FitFuel found the shared text, but could not identify both Ingredients and Instructions. Include those headings in the caption or shared text.');
+    if($title===''||preg_match($ingredientHeader,$title))$title='Imported Social Recipe';
+    return ['recipe_name'=>substr($title,0,255),'description'=>'','source_url'=>$sourceUrl,'source_type'=>'social','ingredients'=>array_slice($ingredients,0,250),'instructions'=>implode("\n",$steps),'servings'=>1,'prep_time_minutes'=>null,'cook_time_minutes'=>null,'calories_per_serving'=>0,'protein_per_serving'=>0,'carbs_per_serving'=>0,'fat_per_serving'=>0,'fiber_per_serving'=>0,'image_url'=>''];
+}
+
 function recipe_import_from_url(string $url): array {
     [$html,$finalUrl]=recipe_import_fetch_html(trim($url));libxml_use_internal_errors(true);$dom=new DOMDocument();@$dom->loadHTML($html,LIBXML_NOWARNING|LIBXML_NOERROR);$xpath=new DOMXPath($dom);$node=null;
     foreach($xpath->query('//script[@type="application/ld+json"]')as$script){$raw=trim($script->textContent);if($raw==='')continue;$decoded=json_decode($raw,true);if($decoded===null)continue;$node=recipe_import_find_node($decoded);if($node)break;}
