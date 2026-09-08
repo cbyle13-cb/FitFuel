@@ -9,11 +9,14 @@
 </style>
 </head>
 <body><main class="wrap"><section class="card">
-<h1>Import Recipe</h1><p class="muted">Paste or share a recipe webpage. FitFuel reads the recipe on the server so no ChatGPT Shortcut step is needed.</p>
+<h1>Import Recipe</h1><p class="muted">Share a recipe webpage or send recipe JSON from ChatGPT. Review every field before saving it to FitFuel.</p>
 <div id="status" class="status">Ready to import.</div>
 <label for="url">Recipe webpage</label><input id="url" type="url" inputmode="url" placeholder="https://example.com/recipe">
 <p class="source-note">You can review every field before saving it to FitFuel.</p>
 <button id="importBtn">Import from Webpage</button>
+<label for="jsonInput">Recipe JSON from ChatGPT</label>
+<textarea id="jsonInput" placeholder='Paste ChatGPT recipe JSON here, beginning with { and ending with }.'></textarea>
+<button id="jsonBtn" class="secondary" type="button">Load Recipe JSON</button>
 <div id="form" class="hidden">
 <label for="name">Recipe name</label><input id="name">
 <label for="ingredients">Ingredients — one per line</label><textarea id="ingredients"></textarea>
@@ -29,8 +32,10 @@
 <script>
 const $=id=>document.getElementById(id), status=$('status'); let current={};
 const params=new URLSearchParams(location.search);
-const shared=params.get('url')||params.get('text')||'';
-if(shared) $('url').value=shared.trim();
+const urlParam=(params.get('url')||'').trim();
+const textParam=(params.get('text')||'').trim();
+const shared=urlParam||(/^https?:\/\//i.test(textParam)?textParam:'');
+if(shared) $('url').value=shared;
 function message(t){status.textContent=t}
 function num(v){if(v===null||v===undefined||v==='')return'';const n=Number(v);return Number.isFinite(n)?n:''}
 function minutes(v){
@@ -69,20 +74,44 @@ function fillStructuredRecipe(r){
  $('form').classList.remove('hidden');
  message('Structured recipe received. Review it before saving.');
 }
-function readStructuredHash(){
- const raw=location.hash.startsWith('#')?location.hash.slice(1):location.hash;
- if(!raw)return false;
- const hp=new URLSearchParams(raw);
- const encoded=hp.get('recipe');
- if(!encoded)return false;
+function cleanJsonText(value){
+ let text=String(value||'').trim();
+ text=text.replace(/^\`\`\`(?:json)?\s*/i,'').replace(/\s*\`\`\`$/,'').trim();
+ if(/^%7B/i.test(text)){try{text=decodeURIComponent(text)}catch(e){}}
+ const first=text.indexOf('{'),last=text.lastIndexOf('}');
+ if(first>0&&last>first)text=text.slice(first,last+1);
+ return text;
+}
+function parseStructuredRecipe(value){
+ const parsed=JSON.parse(cleanJsonText(value));
+ const recipe=parsed&&typeof parsed==='object'&&parsed.recipe&&typeof parsed.recipe==='object'?parsed.recipe:parsed;
+ if(!recipe||Array.isArray(recipe)||typeof recipe!=='object')throw new Error('The JSON must contain one recipe object.');
+ if(!(recipe.recipe_name||recipe.title||recipe.name))throw new Error('The recipe JSON is missing a recipe name.');
+ if(!listValue(recipe.ingredients).length)throw new Error('The recipe JSON is missing ingredients.');
+ if(!instructionValue(recipe.instructions||recipe.directions||recipe.steps))throw new Error('The recipe JSON is missing instructions.');
+ return recipe;
+}
+function loadStructuredRecipe(value){
  try{
-  const parsed=JSON.parse(encoded);
-  fillStructuredRecipe(parsed);
+  const recipe=parseStructuredRecipe(value);
+  $('jsonInput').value=JSON.stringify(recipe,null,2);
+  fillStructuredRecipe(recipe);
   return true;
  }catch(e){
-  message('The structured recipe could not be read. You can still import from the webpage below.');
+  message(e.message||'The structured recipe could not be read. Paste valid recipe JSON below or import from a webpage.');
   return false;
  }
+}
+function structuredInput(){
+ const rawHash=location.hash.startsWith('#')?location.hash.slice(1):location.hash;
+ const hp=new URLSearchParams(rawHash);
+ return params.get('recipe')||hp.get('recipe')||(!shared?textParam:'')||'';
+}
+function readStructuredRecipe(){
+ const value=structuredInput();
+ if(!value)return false;
+ $('jsonInput').value=value;
+ return loadStructuredRecipe(value);
 }
 async function importRecipe(){
  const url=$('url').value.trim(); if(!url){message('Paste or share a recipe webpage first.');return}
@@ -100,6 +129,8 @@ async function saveRecipe(){
  try{const r=await fetch('API/api.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.message||'Could not save recipe.');message('Saved! The recipe is now in FitFuel.');$('saveBtn').textContent='Saved ✓';}
  catch(e){message(e.message)}finally{$('saveBtn').disabled=false}
 }
-$('importBtn').addEventListener('click',importRecipe);$('saveBtn').addEventListener('click',saveRecipe);
-const structured=readStructuredHash();if(!structured&&shared)setTimeout(importRecipe,150);
+$('importBtn').addEventListener('click',importRecipe);
+$('jsonBtn').addEventListener('click',()=>loadStructuredRecipe($('jsonInput').value));
+$('saveBtn').addEventListener('click',saveRecipe);
+const structured=readStructuredRecipe();if(!structured&&shared)setTimeout(importRecipe,150);
 </script></body></html>
