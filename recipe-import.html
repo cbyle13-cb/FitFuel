@@ -26,7 +26,9 @@
 <div class="grid"><div><label for="fat">Fat (g)</label><input id="fat" type="number" step="0.1"></div><div><label for="fiber">Fiber (g)</label><input id="fiber" type="number" step="0.1"></div></div>
 <div class="grid"><div><label for="prep">Prep minutes</label><input id="prep" type="number"></div><div><label for="cook">Cook minutes</label><input id="cook" type="number"></div></div>
 <label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
-<button id="saveBtn">Save to FitFuel Recipes</button><button class="secondary" type="button" onclick="location.href='./'">Back to FitFuel</button>
+<button id="saveBtn">Save to FitFuel Recipes</button>
+<div id="saveStatus" class="status hidden" role="status" aria-live="polite"></div>
+<button id="backBtn" class="secondary" type="button" onclick="location.href='./'">Back to FitFuel</button>
 </div>
 </section></main>
 <script>
@@ -37,6 +39,11 @@ const textParam=(params.get('text')||'').trim();
 const shared=urlParam||(/^https?:\/\//i.test(textParam)?textParam:'');
 if(shared) $('url').value=shared;
 function message(t){status.textContent=t}
+function saveMessage(t){
+ const box=$('saveStatus');
+ box.textContent=t;
+ box.classList.remove('hidden');
+}
 function num(v){if(v===null||v===undefined||v==='')return'';const n=Number(v);return Number.isFinite(n)?n:''}
 function minutes(v){
  if(v===null||v===undefined||v==='')return'';
@@ -125,9 +132,27 @@ async function importRecipe(){
 }
 async function saveRecipe(){
  const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
- if(!payload.recipe_name){message('Recipe name is required.');return} $('saveBtn').disabled=true;message('Saving recipe…');
- try{const r=await fetch('API/api.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});const j=await r.json();if(!r.ok||!j.success)throw new Error(j.message||'Could not save recipe.');message('Saved! The recipe is now in FitFuel.');$('saveBtn').textContent='Saved ✓';}
- catch(e){message(e.message)}finally{$('saveBtn').disabled=false}
+ if(!payload.recipe_name){saveMessage('Recipe name is required.');return}
+ const saveBtn=$('saveBtn');
+ saveBtn.disabled=true;
+ saveBtn.textContent='Saving…';
+ saveMessage('Saving recipe…');
+ try{
+  const r=await fetch('API/api.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)});
+  let j={};try{j=await r.json()}catch(parseError){throw new Error(r.status===401?'Please sign in to FitFuel, then try saving again.':'FitFuel returned an unexpected response.');}
+  if(!r.ok||!j.success)throw new Error(j.message||'Could not save recipe.');
+  message('Saved! The recipe is now in FitFuel.');
+  saveMessage('Saved! The recipe is now in FitFuel. Tap “Back to FitFuel,” then open Recipes.');
+  saveBtn.textContent='Saved ✓';
+  saveBtn.disabled=true;
+  $('backBtn').textContent='Back to FitFuel — Saved ✓';
+ }catch(e){
+  const error=String(e.message||e);
+  message(error);
+  saveMessage(error);
+  saveBtn.textContent='Try Saving Again';
+  saveBtn.disabled=false;
+ }
 }
 $('importBtn').addEventListener('click',importRecipe);
 $('jsonBtn').addEventListener('click',()=>loadStructuredRecipe($('jsonInput').value));
