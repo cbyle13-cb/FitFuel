@@ -75,6 +75,12 @@ function shortcut_is_nutrition_line(string $line): bool {
     return (bool)preg_match('/^\s*(?:nutrition(?:\s+per\s+serving)?|servings?|calories(?:\s+per\s+serving)?|protein(?:\s+per\s+serving)?|carbs?(?:\s+per\s+serving)?|carbohydrates?(?:\s+per\s+serving)?|fat(?:\s+per\s+serving)?|fiber(?:\s+per\s+serving)?)\s*:?(?:\s|$)/i', trim($line));
 }
 
+function shortcut_is_source_link_line(string $line): bool {
+    $line = trim($line);
+    if (preg_match('/^link\s*:\s*https?:\/\//i', $line)) return true;
+    return (bool)filter_var($line, FILTER_VALIDATE_URL);
+}
+
 $in = json_decode(file_get_contents('php://input'), true);
 if (!is_array($in)) {
     json_response(['success' => false, 'message' => 'Invalid JSON request.'], 400);
@@ -149,7 +155,7 @@ $steps = shortcut_list($instructionsRaw);
 $cleanSteps = [];
 foreach ($steps as $step) {
     $step = clean_string($step, 3000);
-    if ($step === '' || shortcut_is_nutrition_line($step)) continue;
+    if ($step === '' || shortcut_is_nutrition_line($step) || shortcut_is_source_link_line($step)) continue;
     $step = preg_replace('/^\s*\d+[\.)]\s*/u', '', $step);
     if ($step !== '') $cleanSteps[] = $step;
 }
@@ -157,7 +163,7 @@ $numberedSteps = [];
 foreach ($cleanSteps as $i => $step) {
     $numberedSteps[] = ($i + 1) . '. ' . $step;
 }
-$instructions = implode("\n", $numberedSteps);
+$instructions = implode("\n\n", $numberedSteps);
 if ($instructions === '') {
     json_response(['success' => false, 'message' => 'Recipe instructions are required.'], 400);
 }
