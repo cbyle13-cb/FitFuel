@@ -25,8 +25,6 @@ function ensure_shortcut_tokens_table(mysqli $conn): void {
 }
 
 function shortcut_token_from_request(array $in): string {
-    // "import_key" is the user-facing Shortcuts field name. Keep
-    // "import_token" for backward compatibility with earlier builds.
     $token = trim((string)($in['import_key'] ?? $in['import_token'] ?? ''));
     if ($token !== '') return $token;
     $auth = trim((string)($_SERVER['HTTP_AUTHORIZATION'] ?? ''));
@@ -45,22 +43,42 @@ function shortcut_list($value): array {
     if (!is_string($value)) return [];
     $text = trim($value);
     if ($text === '') return [];
-
-    // Shortcuts may serialize a Dictionary list into a JSON string when the
-    // request-body field is configured as Text. Accept that form directly.
     if (($text[0] ?? '') === '[') {
         $decoded = json_decode($text, true);
         if (is_array($decoded)) return $decoded;
     }
-
-    // It may instead coerce a list to lines. Prefer lines, then fall back to
-    // comma-delimited text for simple lists.
     $lines = preg_split('/\r\n|\r|\n/', $text, -1, PREG_SPLIT_NO_EMPTY);
     if (count($lines) > 1) return $lines;
     if (strpos($text, ',') !== false) {
         return preg_split('/\s*,\s*/', $text, -1, PREG_SPLIT_NO_EMPTY);
     }
     return [$text];
+}
+
+function shortcut_nutrition_from_text(string $text): array {
+    $out = [];
+    $patterns = [
+        'servings' => '/(?:^|\n)\s*servings?\s*:\s*(\d+(?:\.\d+)?)/i',
+        'calories_per_serving' => '/(?:^|\n)\s*calories(?:\s+per\s+serving)?\s*:\s*(\d+(?:\.\d+)?)/i',
+        'protein_per_serving' => '/(?:^|\n)\s*protein(?:\s+per\s+serving)?\s*:\s*(\d+(?:\.\d+)?)/i',
+        'carbs_per_serving' => '/(?:^|\n)\s*(?:carbs?|carbohydrates?)(?:\s+per\s+serving)?\s*:\s*(\d+(?:\.\d+)?)/i',
+        'fat_per_serving' => '/(?:^|\n)\s*fat(?:\s+per\s+serving)?\s*:\s*(\d+(?:\.\d+)?)/i',
+        'fiber_per_serving' => '/(?:^|\n)\s*fiber(?:\s+per\s+serving)?\s*:\s*(\d+(?:\.\d+)?)/i',
+    ];
+    foreach ($patterns as $key => $pattern) {
+        if (preg_match($pattern, $text, $m)) $out[$key] = (float)$m[1];
+    }
+    return $out;
+}
+
+function shortcut_is_nutrition_line(string $line): bool {
+    return (bool)preg_match('/^\s*(?:nutrition(?:\s+per\s+serving)?|servings?|calories(?:\s+per\s+serving)?|protein(?:\s+per\s+serving)?|carbs?(?:\s+per\s+serving)?|carbohydrates?(?:\s+per\s+serving)?|fat(?:\s+per\s+serving)?|fiber(?:\s+per\s+serving)?)\s*:?(?:\s|$)/i', trim($line));
+}
+
+function shortcut_is_source_link_line(string $line): bool {
+    $line = trim($line);
+    if (preg_match('/^link\s*:\s*https?:\/\//i', $line)) return true;
+    return (bool)filter_var($line, FILTER_VALIDATE_URL);
 }
 
 $in = json_decode(file_get_contents('php://input'), true);
@@ -85,10 +103,10 @@ if (!$tokenRow || (int)$tokenRow['is_active'] !== 1) {
 $uid = (int)$tokenRow['user_id'];
 $tokenId = (int)$tokenRow['id'];
 
-// New lightweight Shortcut flow: send only import_key + url. Keep the
-// existing structured payload path below for backward compatibility.
 $sharedUrl = trim((string)($in['url'] ?? $in['recipe_url'] ?? ''));
 $sharedText = trim((string)($in['text'] ?? $in['caption'] ?? $in['recipe_text'] ?? ''));
+$nutritionFromText = shortcut_nutrition_from_text($sharedText);
+
 if ($sharedUrl === '' && empty($in['recipe_name']) && !empty($in['source_url'])) {
     $sharedUrl = trim((string)$in['source_url']);
 }
@@ -99,13 +117,19 @@ if ($sharedUrl !== '') {
         $in['source_url'] = $extracted['source_url'];
         $in['source_type'] = 'web';
     } catch (RecipeImportException $e) {
-        if($sharedText==='')json_response(['success'=>false,'message'=>$e->getMessage()],$e->httpStatus);
-        try{$in=array_merge($in,recipe_import_from_text($sharedText,$sharedUrl));}
-        catch(RecipeImportException $textError){json_response(['success'=>false,'message'=>$e->getMessage().' '.$textError->getMessage()],422);}
+        if ($sharedText === '') json_response(['success' => false, 'message' => $e->getMessage()], $e->httpStatus);
+        try {
+            $in = array_merge($in, recipe_import_from_text($sharedText, $sharedUrl));
+        } catch (RecipeImportException $textError) {
+            json_response(['success' => false, 'message' => $e->getMessage() . ' ' . $textError->getMessage()], 422);
+        }
     }
-} elseif($sharedText!==''&&empty($in['recipe_name'])) {
-    try{$in=array_merge($in,recipe_import_from_text($sharedText));}
-    catch(RecipeImportException $e){json_response(['success'=>false,'message'=>$e->getMessage()],$e->httpStatus);}
+} elseif ($sharedText !== '' && empty($in['recipe_name'])) {
+    try {
+        $in = array_merge($in, recipe_import_from_text($sharedText));
+    } catch (RecipeImportException $e) {
+        json_response(['success' => false, 'message' => $e->getMessage()], $e->httpStatus);
+    }
 }
 
 $name = clean_string($in['recipe_name'] ?? $in['title'] ?? '', 255);
@@ -131,10 +155,15 @@ $steps = shortcut_list($instructionsRaw);
 $cleanSteps = [];
 foreach ($steps as $step) {
     $step = clean_string($step, 3000);
+    if ($step === '' || shortcut_is_nutrition_line($step) || shortcut_is_source_link_line($step)) continue;
     $step = preg_replace('/^\s*\d+[\.)]\s*/u', '', $step);
     if ($step !== '') $cleanSteps[] = $step;
 }
-$instructions = implode("\n", $cleanSteps);
+$numberedSteps = [];
+foreach ($cleanSteps as $i => $step) {
+    $numberedSteps[] = ($i + 1) . '. ' . $step;
+}
+$instructions = implode("\n\n", $numberedSteps);
 if ($instructions === '') {
     json_response(['success' => false, 'message' => 'Recipe instructions are required.'], 400);
 }
@@ -143,15 +172,15 @@ $description = clean_string($in['description'] ?? '', 5000);
 $sourceUrl = clean_string($in['source_url'] ?? '', 2000);
 if ($sourceUrl !== '' && !filter_var($sourceUrl, FILTER_VALIDATE_URL)) $sourceUrl = '';
 $sourceType = clean_string($in['source_type'] ?? 'shortcut', 50);
-$servings = (float)($in['servings'] ?? 1);
+$servings = isset($nutritionFromText['servings']) ? $nutritionFromText['servings'] : (float)($in['servings'] ?? 1);
 if ($servings <= 0) $servings = 1;
 $prep = isset($in['prep_time_minutes']) && $in['prep_time_minutes'] !== '' ? (int)$in['prep_time_minutes'] : null;
 $cook = isset($in['cook_time_minutes']) && $in['cook_time_minutes'] !== '' ? (int)$in['cook_time_minutes'] : null;
-$cal = (float)($in['calories_per_serving'] ?? 0);
-$pro = (float)($in['protein_per_serving'] ?? 0);
-$carbs = (float)($in['carbs_per_serving'] ?? 0);
-$fat = (float)($in['fat_per_serving'] ?? 0);
-$fiber = (float)($in['fiber_per_serving'] ?? 0);
+$cal = isset($nutritionFromText['calories_per_serving']) ? $nutritionFromText['calories_per_serving'] : (float)($in['calories_per_serving'] ?? 0);
+$pro = isset($nutritionFromText['protein_per_serving']) ? $nutritionFromText['protein_per_serving'] : (float)($in['protein_per_serving'] ?? 0);
+$carbs = isset($nutritionFromText['carbs_per_serving']) ? $nutritionFromText['carbs_per_serving'] : (float)($in['carbs_per_serving'] ?? 0);
+$fat = isset($nutritionFromText['fat_per_serving']) ? $nutritionFromText['fat_per_serving'] : (float)($in['fat_per_serving'] ?? 0);
+$fiber = isset($nutritionFromText['fiber_per_serving']) ? $nutritionFromText['fiber_per_serving'] : (float)($in['fiber_per_serving'] ?? 0);
 $fav = (int)($in['is_favorite'] ?? 0) ? 1 : 0;
 
 $st = $conn->prepare("INSERT INTO recipes(user_id,recipe_name,description,source_url,source_type,ingredients,instructions,servings,prep_time_minutes,cook_time_minutes,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,is_favorite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
