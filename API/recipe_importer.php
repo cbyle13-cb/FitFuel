@@ -81,26 +81,66 @@ function recipe_import_likely_ingredient(string $line): bool {
 function recipe_import_likely_instruction(string $line): bool {
     $line=trim(preg_replace('/^[\s\-•*✅☑️]+/u','',$line));
     if($line===''||recipe_import_social_noise($line))return false;
-    if(preg_match('/^(?:step\s*)?\d+[\.)\-:]\s*/iu',$line))return true;
-    if(preg_match('/^(?:preheat|heat|add|mix|stir|combine|whisk|blend|cook|bake|roast|grill|smoke|sear|sauté|saute|boil|simmer|pour|place|set|season|toss|fold|slice|dice|chop|cut|remove|rest|serve|top|garnish|air fry|microwave|refrigerate|chill|marinate)\b/iu',$line))return true;
+    if(preg_match('/^(?:step\s*)?\d+(?:\x{FE0F}?\x{20E3})?[\.)\-:]?\s*/iu',$line))return true;
+    if(preg_match('/^(?:preheat|heat|add|mix|stir|combine|whisk|blend|cook|bake|roast|grill|smoke|sear|sauté|saute|boil|simmer|pour|place|set|season|toss|fold|slice|dice|chop|cut|remove|rest|serve|top|garnish|finish|air fry|microwave|refrigerate|chill|marinate|transfer)\b/iu',$line))return true;
     if(mb_strlen($line)>70&&preg_match('/\b(?:until|then|minutes?|degrees?|oven|pan|skillet|bowl|heat|cook|bake|mix|stir|serve)\b/iu',$line))return true;
     return false;
 }
 
+function recipe_import_extract_shared_text(string $rawText): string {
+    $candidate=$rawText;
+
+    // iOS Shortcuts may pass the matched Instagram <meta> tag instead of only
+    // its content attribute. Pull the caption out before strip_tags removes it.
+    if(stripos($rawText,'<meta')!==false){
+        libxml_use_internal_errors(true);
+        $dom=new DOMDocument();
+        @$dom->loadHTML('<!doctype html><html><head>'.$rawText.'</head><body></body></html>',LIBXML_NOWARNING|LIBXML_NOERROR);
+        $xpath=new DOMXPath($dom);
+        $nodes=$xpath->query('//meta[@property="og:title" or @property="og:description" or @name="description"]/@content');
+        if($nodes&&$nodes->length>0){
+            $value=trim((string)$nodes->item(0)->nodeValue);
+            if($value!=='')$candidate=$value;
+        } elseif(preg_match('/<meta\b[^>]*\bcontent\s*=\s*(["\'])(.*?)\1/isu',$rawText,$m)) {
+            $candidate=$m[2];
+        }
+        libxml_clear_errors();
+    }
+
+    $candidate=html_entity_decode($candidate,ENT_QUOTES|ENT_HTML5,'UTF-8');
+    $candidate=strip_tags($candidate);
+    $candidate=str_replace(["\r\n","\r"],"\n",$candidate);
+    return trim($candidate," \t\n\r\0\x0B\"");
+}
+
+function recipe_import_strip_step_prefix(string $line): string {
+    return trim(preg_replace('/^\s*(?:step\s*)?\d+(?:\x{FE0F}?\x{20E3})?[\.)\-:]?\s*/iu','',$line));
+}
+
+function recipe_import_social_title(string $title): string {
+    $title=trim($title);
+    if(preg_match('/^@[^\s]+\s+on\s+Instagram\s*:\s*["“]?(.+?)["”]?$/iu',$title,$m))$title=trim($m[1]);
+    $title=preg_replace('/\s*[🌶️🍝🍲🥘🍗🥩🥗🍴]+\s*$/u','',$title);
+    return trim($title," \t\n\r\0\x0B\"");
+}
+
 function recipe_import_from_text(string $rawText, string $sourceUrl=''): array {
-    $text=trim(str_replace(["\r\n","\r"],"\n",strip_tags($rawText)));
+    $text=recipe_import_extract_shared_text($rawText);
     if($text==='')throw new RecipeImportException('No recipe caption or text was shared.',400);
     if(strlen($text)>60000)$text=substr($text,0,60000);
     $lines=array_values(array_filter(array_map('trim',explode("\n",$text)),fn($line)=>$line!==''));
-    $ingredientHeader='/^(?:[🍴🥣📝]\s*)?(?:ingredients?|what you(?:’|\')?ll need|you(?:’|\')?ll need)\s*:?[\s]*$/iu';
-    $instructionHeader='/^(?:[👩‍🍳🧑‍🍳🔥📝]\s*)?(?:directions?|instructions?|method|steps?|how to make(?: it)?)\s*:?[\s]*$/iu';
+
+    // Allow emoji/symbol prefixes used by Instagram creators, e.g.
+    // “🛒 Ingredients” and “👨‍🍳 How To Make It”.
+    $ingredientHeader='/^[^\p{L}\p{N}]*(?:ingredients?|what you(?:’|\')?ll need|you(?:’|\')?ll need)\s*:?[\s]*$/iu';
+    $instructionHeader='/^[^\p{L}\p{N}]*(?:directions?|instructions?|method|steps?|how to make(?: it)?)\s*:?[\s]*$/iu';
     $section='';$ingredients=[];$steps=[];$title='';$sawIngredientHeader=false;$sawInstructionHeader=false;
     foreach($lines as$line){
         if(preg_match($ingredientHeader,$line)){$section='ingredients';$sawIngredientHeader=true;continue;}
         if(preg_match($instructionHeader,$line)){$section='instructions';$sawInstructionHeader=true;continue;}
-        if($title===''&&!recipe_import_social_noise($line))$title=preg_replace('/^[#*\s]+|[#*\s]+$/u','',$line);
+        if($title===''&&!recipe_import_social_noise($line))$title=recipe_import_social_title(preg_replace('/^[#*\s]+|[#*\s]+$/u','',$line));
         if($section==='ingredients'){$item=trim(preg_replace('/^[\s\-•*✅☑️]+/u','',$line));if($item!==''&&!recipe_import_social_noise($item))$ingredients[]=$item;}
-        elseif($section==='instructions'){$step=trim(preg_replace('/^\s*(?:step\s*)?\d+[\.)\-:]?\s*/iu','',$line));if($step!==''&&!recipe_import_social_noise($step))$steps[]=$step;}
+        elseif($section==='instructions'){$step=recipe_import_strip_step_prefix($line);if($step!==''&&!recipe_import_social_noise($step))$steps[]=$step;}
     }
 
     if(!$ingredients||!$steps){
@@ -109,7 +149,7 @@ function recipe_import_from_text(string $rawText, string $sourceUrl=''): array {
             if($line===$title||preg_match($ingredientHeader,$line)||preg_match($instructionHeader,$line)||recipe_import_social_noise($line))continue;
             $clean=trim(preg_replace('/^[\s\-•*✅☑️▪️▫️]+/u','',$line));
             if(!$instructionStarted&&recipe_import_likely_ingredient($clean)){$heuristicIngredients[]=$clean;$ingredientIndexes[$i]=true;continue;}
-            if(recipe_import_likely_instruction($clean)){$instructionStarted=true;$heuristicSteps[]=trim(preg_replace('/^\s*(?:step\s*)?\d+[\.)\-:]?\s*/iu','',$clean));continue;}
+            if(recipe_import_likely_instruction($clean)){$instructionStarted=true;$heuristicSteps[]=recipe_import_strip_step_prefix($clean);continue;}
             if($instructionStarted&&mb_strlen($clean)>18&&!recipe_import_social_noise($clean))$heuristicSteps[]=$clean;
         }
         if(!$steps&&count($heuristicIngredients)>=2&&!$heuristicSteps){
