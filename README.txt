@@ -8,11 +8,13 @@ Database-backed FitFuel application with:
 - Recipes and meal planning
 - Progress tracking
 - Workout logging
+- Automatic ChatGPT weekly workout-plan import
 
 Deployment
 - Repository deploys to Hostinger public_html from main.
 - Database credentials are NOT stored in this repository.
 - Hostinger must contain fitfuel_private.php one level above public_html.
 - Run FitFuel_database_upgrade.sql in the Hostinger MySQL database before using the upgraded application.
+- After deployment, sign in and open Connect to create the private ChatGPT connection URL.
 
 Do not commit fitfuel_private.php, .env files, or database passwords.
