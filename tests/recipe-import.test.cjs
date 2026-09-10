@@ -35,5 +35,5 @@ test('social imports fall back to caption text with recipe sections', () => {
   assert.match(importer, /ingredients\?/i);
   assert.match(importer, /instructions\?/i);
   assert.match(endpoint, /\$in\['text'\].*\$in\['caption'\].*\$in\['recipe_text'\]/s);
-  assert.match(endpoint, /recipe_import_from_text\(\$sharedText,\$sharedUrl\)/);
+  assert.match(endpoint, /recipe_import_from_text\(\$sharedText,\s*\$sharedUrl\)/);
 });
