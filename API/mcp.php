@@ -1,6 +1,7 @@
 <?php
 require_once 'session.php';
 require_once 'workout_import_lib.php';
+require_once 'oauth_lib.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -27,7 +28,8 @@ $id = $request['id'] ?? null;
 $method = (string)($request['method'] ?? '');
 
 try {
-    $userId = fitfuel_import_user($conn);
+    $requiredScope = ($method === 'tools/call' && (($request['params']['name'] ?? '') === 'save_weekly_plan')) ? 'workouts:write' : 'workouts:read';
+    $userId = fitfuel_oauth_user($conn, $requiredScope);
     if ($method === 'initialize') {
         mcp_reply($id, [
             'protocolVersion'=>'2025-03-26',
@@ -109,4 +111,3 @@ try {
     http_response_code(500);
     mcp_error($id, -32603, 'FitFuel could not complete the request.');
 }
-
