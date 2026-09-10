@@ -9,15 +9,9 @@
 </head>
 <body><div class="wrap"><div class="card">
 <h1>Connect ChatGPT to FitFuel</h1>
-<p>Create a private connection URL so your scheduled weekly strength plan can read your recent training and save the same plan into FitFuel.</p>
-<button id="createBtn" class="btn">Create ChatGPT Connection</button>
-<div id="status" class="status"></div><div id="urlBox" class="secret"></div>
-<button id="copyBtn" class="btn secondary" style="display:none">Copy Connection URL</button>
-<p class="small">This URL contains a private key. Do not post it, email it, or commit it to GitHub. Creating a new connection does not reveal your FitFuel password. You can revoke its key in the database if a device or URL is ever exposed.</p>
+<p>Your FitFuel connector lets the Sunday task read recent training and save the same plan into your workout library.</p>
+<ol><li>Install the private FitFuel plugin in ChatGPT.</li><li>Choose Connect. FitFuel will open in a secure login-and-consent window.</li><li>Sign in and select <b>Allow ChatGPT</b>.</li></ol>
+<p class="small">FitFuel uses OAuth 2.1 with PKCE. Your password stays with FitFuel; ChatGPT receives only revocable workout read/write tokens.</p>
 <p><a href="./">Return to FitFuel</a></p>
 </div></div>
-<script>
-const createBtn=document.getElementById('createBtn'),copyBtn=document.getElementById('copyBtn'),urlBox=document.getElementById('urlBox'),status=document.getElementById('status');let connectionUrl='';
-createBtn.addEventListener('click',async()=>{createBtn.disabled=true;status.textContent='Creating connection…';try{const response=await fetch('API/shortcut_token.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({token_name:'ChatGPT Weekly Strength Plan'})});const result=await response.json();if(!response.ok||!result.success){if(response.status===401)status.innerHTML='Please <a href="./">log in to FitFuel</a> first, then return to this page.';else status.textContent=result.message||'Unable to create the connection.';return;}connectionUrl=new URL('API/mcp.php',window.location.href).href+'?key='+encodeURIComponent(result.import_token);urlBox.textContent=connectionUrl;urlBox.style.display='block';copyBtn.style.display='block';status.textContent='Connection created. Copy the URL and add it to your private FitFuel plugin.';}catch(error){status.textContent='Could not connect to FitFuel. Try again in a moment.';}finally{createBtn.disabled=false;}});
-copyBtn.addEventListener('click',async()=>{if(!connectionUrl)return;try{await navigator.clipboard.writeText(connectionUrl);status.textContent='Connection URL copied.';}catch(error){status.textContent='Press and hold the URL, then choose Copy.';}});
-</script></body></html>
+</body></html>
