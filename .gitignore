@@ -2,3 +2,4 @@
 fitfuel_private.php
 .env
 .env.*
+node_modules/
