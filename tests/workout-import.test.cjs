@@ -20,9 +20,12 @@ test('MCP exposes one read action and one weekly-plan write action',()=>{
   assert.match(source,/'minItems'=>3,'maxItems'=>5/);
 });
 
-test('connection setup never requests or embeds the FitFuel password',()=>{
+test('connection uses OAuth discovery, PKCE and no key in the MCP URL',()=>{
   const source=read('fitfuel-connector-setup.html');
-  assert.doesNotMatch(source,/type=["']password/i);
-  assert.match(source,/API\/shortcut_token\.php/);
-  assert.match(source,/Do not post it, email it, or commit it to GitHub/);
+  const oauth=read('API/oauth_lib.php'),mcp=read('API/mcp.php');
+  assert.match(source,/OAuth 2\.1 with PKCE/);
+  assert.match(oauth,/FITFUEL_CHATGPT_REDIRECT/);
+  assert.match(oauth,/hash\('sha256', \$token\)/);
+  assert.match(mcp,/fitfuel_oauth_user/);
+  assert.doesNotMatch(mcp,/\$_GET\['key'\]/);
 });
