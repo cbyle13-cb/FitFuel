@@ -1,0 +1,9 @@
+.weekly-plan {
+  border: 2px solid #93c5fd;
+  background: linear-gradient(180deg, #eff6ff 0, #fff 180px);
+}
+
+.optional-badge {
+  background: #f3f4f6;
+  color: #4b5563;
+}
