@@ -37,6 +37,49 @@ function recipe_import_resolve_url(string $base, string $location): string {
     return $origin.preg_replace('~/[^/]*$~', '/', $parts['path'] ?? '/').$location;
 }
 
+function recipe_import_clean_image_url($value, string $base): string {
+    if (is_array($value)) {
+        $value = $value['url'] ?? $value['contentUrl'] ?? ($value[0] ?? '');
+        if (is_array($value)) $value = $value['url'] ?? $value['contentUrl'] ?? '';
+    }
+    $url = trim(html_entity_decode((string)$value, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    if ($url === '') return '';
+    $url = recipe_import_resolve_url($base, $url);
+    try { recipe_import_validate_url($url); } catch (Throwable $error) { return ''; }
+    return strlen($url) <= 2048 ? $url : '';
+}
+
+function recipe_import_page_image(DOMXPath $xpath, string $base, $structuredImage = ''): string {
+    $image = recipe_import_clean_image_url($structuredImage, $base);
+    if ($image !== '') return $image;
+    $queries = [
+        '//meta[@property="og:image:secure_url"]/@content',
+        '//meta[@property="og:image"]/@content',
+        '//meta[@name="twitter:image"]/@content',
+        '//meta[@property="twitter:image"]/@content',
+    ];
+    foreach ($queries as $query) {
+        $nodes = $xpath->query($query);
+        if ($nodes && $nodes->length) {
+            $image = recipe_import_clean_image_url($nodes->item(0)->nodeValue, $base);
+            if ($image !== '') return $image;
+        }
+    }
+    return '';
+}
+
+function recipe_import_source_image(string $url): string {
+    try {
+        [$html, $finalUrl] = recipe_import_fetch_html(trim($url));
+        libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html, LIBXML_NOWARNING | LIBXML_NOERROR);
+        $image = recipe_import_page_image(new DOMXPath($dom), $finalUrl);
+        libxml_clear_errors();
+        return $image;
+    } catch (Throwable $error) { return ''; }
+}
+
 function recipe_import_fetch_html(string $initialUrl): array {
     $url = $initialUrl;
     for ($redirect=0; $redirect<=4; $redirect++) {
@@ -175,6 +218,6 @@ function recipe_import_from_url(string $url): array {
     if(!$node)throw new RecipeImportException('FitFuel could not find structured recipe data on this page. You can still enter it manually.');
     $ingredients=[];foreach(($node['recipeIngredient']??[])as$ingredient){$ingredient=trim(strip_tags((string)$ingredient));if($ingredient!=='')$ingredients[]=$ingredient;}
     $nutrition=is_array($node['nutrition']??null)?$node['nutrition']:[];$servings=recipe_import_number($node['recipeYield']??1);if($servings<=0)$servings=1;
-    $image=$node['image']??'';if(is_array($image)){$image=$image['url']??($image[0]??'');if(is_array($image))$image=$image['url']??'';}
+    $image=recipe_import_page_image($xpath,$finalUrl,$node['image']??'');
     return ['recipe_name'=>trim(strip_tags((string)($node['name']??'')))?:'Imported Recipe','description'=>trim(strip_tags((string)($node['description']??''))),'source_url'=>$finalUrl,'source_type'=>'web','ingredients'=>$ingredients,'instructions'=>recipe_import_instruction_text($node['recipeInstructions']??[]),'servings'=>$servings,'prep_time_minutes'=>recipe_import_minutes($node['prepTime']??null),'cook_time_minutes'=>recipe_import_minutes($node['cookTime']??null),'calories_per_serving'=>recipe_import_number($nutrition['calories']??0),'protein_per_serving'=>recipe_import_number($nutrition['proteinContent']??0),'carbs_per_serving'=>recipe_import_number($nutrition['carbohydrateContent']??0),'fat_per_serving'=>recipe_import_number($nutrition['fatContent']??0),'fiber_per_serving'=>recipe_import_number($nutrition['fiberContent']??0),'image_url'=>(string)$image];
 }

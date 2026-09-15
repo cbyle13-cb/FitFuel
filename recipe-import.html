@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Import Recipe • FitFuel</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#f4f6f5;color:#17211b}.wrap{max-width:760px;margin:auto;padding:20px 16px 50px}.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 5px 24px #0001}h1{margin:0 0 6px;font-size:28px}.muted{color:#647069;margin-top:0}label{display:block;font-weight:650;margin:14px 0 6px}input,textarea{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #ccd3cf;border-radius:11px;background:#fff;color:#17211b}textarea{min-height:120px;resize:vertical}button{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:750;background:#1d6d4c;color:white;margin-top:12px}.secondary{background:#e8eeeb;color:#17211b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{margin:12px 0;padding:11px;border-radius:10px;background:#eef2f0}.hidden{display:none}.access{margin:14px 0;padding:12px;border:1px solid #ccd3cf;border-radius:11px}.access summary{font-weight:700;cursor:pointer}.access button{margin-top:10px}.source-note{font-size:13px;color:#647069;margin:8px 0 0}@media(prefers-color-scheme:dark){body{background:#111714;color:#edf3ef}.card,input,textarea{background:#1b2420;color:#edf3ef}.card{box-shadow:none}.muted,.source-note{color:#aab7b0}.secondary{background:#303c36;color:#edf3ef}.status{background:#26312c}}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#f4f6f5;color:#17211b}.wrap{max-width:760px;margin:auto;padding:20px 16px 50px}.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 5px 24px #0001}h1{margin:0 0 6px;font-size:28px}.muted{color:#647069;margin-top:0}label{display:block;font-weight:650;margin:14px 0 6px}input,textarea{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #ccd3cf;border-radius:11px;background:#fff;color:#17211b}textarea{min-height:120px;resize:vertical}button{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:750;background:#1d6d4c;color:white;margin-top:12px}.secondary{background:#e8eeeb;color:#17211b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{margin:12px 0;padding:11px;border-radius:10px;background:#eef2f0}.hidden{display:none}.access{margin:14px 0;padding:12px;border:1px solid #ccd3cf;border-radius:11px}.access summary{font-weight:700;cursor:pointer}.access button{margin-top:10px}.source-note{font-size:13px;color:#647069;margin:8px 0 0}.photo-preview{display:block;width:100%;max-height:320px;object-fit:cover;border-radius:14px;margin-top:10px;background:#eef2f0}.photo-preview.hidden{display:none}@media(prefers-color-scheme:dark){body{background:#111714;color:#edf3ef}.card,input,textarea{background:#1b2420;color:#edf3ef}.card{box-shadow:none}.muted,.source-note{color:#aab7b0}.secondary{background:#303c36;color:#edf3ef}.status{background:#26312c}.photo-preview{background:#26312c}}
 </style>
 </head>
 <body><main class="wrap"><section class="card">
@@ -33,6 +33,8 @@
 <div class="grid"><div><label for="fat">Fat (g)</label><input id="fat" type="number" step="0.1"></div><div><label for="fiber">Fiber (g)</label><input id="fiber" type="number" step="0.1"></div></div>
 <div class="grid"><div><label for="prep">Prep minutes</label><input id="prep" type="number"></div><div><label for="cook">Cook minutes</label><input id="cook" type="number"></div></div>
 <label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
+<label for="imageUrl">Recipe photo from source</label><input id="imageUrl" type="url" inputmode="url" placeholder="Photo URL">
+<img id="imagePreview" class="photo-preview hidden" alt="Imported recipe preview" referrerpolicy="no-referrer">
 <button id="saveBtn">Save to FitFuel Recipes</button>
 <div id="saveStatus" class="status hidden" role="status" aria-live="polite"></div>
 <button id="backBtn" class="secondary" type="button" onclick="location.href='./'">Back to FitFuel</button>
@@ -105,6 +107,11 @@ function instructionValue(v){
  if(Array.isArray(v))return v.map((x,i)=>`${i+1}. ${String(x).replace(/^\d+[.)]\s*/, '').trim()}`).join('\n');
  return typeof v==='string'?v.trim():'';
 }
+function previewImage(){
+ const value=$('imageUrl').value.trim(),preview=$('imagePreview');
+ preview.classList.toggle('hidden',!value);
+ if(value)preview.src=value;else preview.removeAttribute('src');
+}
 function fillStructuredRecipe(r){
  current=r||{};
  const ingredients=listValue(current.ingredients);
@@ -121,6 +128,8 @@ function fillStructuredRecipe(r){
  $('prep').value=minutes(current.prep_time_minutes??current.prep_time);
  $('cook').value=minutes(current.cook_time_minutes??current.cook_time);
  $('description').value=current.description||current.summary||'';
+ $('imageUrl').value=current.image_url||current.image||'';
+ previewImage();
  $('form').classList.remove('hidden');
  message('Structured recipe received. Review it before saving.');
 }
@@ -174,7 +183,7 @@ async function importRecipe(){
  finally{$('importBtn').disabled=false}
 }
 async function saveRecipe(){
- const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
+ const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),image_url:$('imageUrl').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
  if(!payload.recipe_name){saveMessage('Recipe name is required.');return}
  const saveBtn=$('saveBtn');
  saveBtn.disabled=true;
@@ -205,6 +214,8 @@ async function saveRecipe(){
 }
 $('importBtn').addEventListener('click',importRecipe);
 $('jsonBtn').addEventListener('click',()=>loadStructuredRecipe($('jsonInput').value));
+$('imageUrl').addEventListener('input',previewImage);
+$('imagePreview').addEventListener('error',()=>{$('imagePreview').classList.add('hidden')});
 $('enableKeyBtn').addEventListener('click',enableImportKey);
 $('clearKeyBtn').addEventListener('click',clearImportKey);
 $('saveBtn').addEventListener('click',saveRecipe);
