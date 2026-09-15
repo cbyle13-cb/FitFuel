@@ -1,0 +1,42 @@
+:root{--ink:#111827;--muted:#667085;--canvas:#f5f6f8;--brand:#635bff;--brand-dark:#17152f;--lime:#c9ff38;--shadow:0 12px 32px rgba(16,24,40,.08)}
+body{background:var(--canvas);color:var(--ink)}
+header{background:linear-gradient(120deg,#17152f,#292454);padding:17px max(16px,calc((100vw - 900px)/2 + 16px));box-shadow:0 4px 18px #11152a33}
+header h1{font-size:22px;letter-spacing:-.4px}
+nav{top:70px;padding:9px max(10px,calc((100vw - 900px)/2 + 10px));gap:5px;border:0;box-shadow:0 2px 12px #1118270d}
+nav button{background:transparent;border-radius:999px;padding:9px 13px}
+nav button.active{background:var(--brand-dark)}
+main{padding-top:18px}
+.card{border:1px solid #eaecf0;border-radius:20px;box-shadow:var(--shadow);padding:18px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.5px;margin:0 0 7px;color:#7069e8}
+.hero-card,.training-hero{position:relative;overflow:hidden;border-radius:24px;padding:24px;color:#fff;background:linear-gradient(135deg,#17152f 0%,#3c3475 100%);box-shadow:0 18px 38px #29245438}
+.hero-card:after,.training-hero:after{content:"";position:absolute;width:210px;height:210px;border-radius:50%;right:-80px;top:-90px;background:radial-gradient(circle,#c9ff3855,transparent 68%)}
+.hero-card h2,.training-hero h2{font-size:28px;line-height:1.05;margin:0 0 9px;letter-spacing:-.8px}
+.hero-card p:not(.eyebrow),.training-hero>p:not(.eyebrow){max-width:570px;color:#dedcf1}
+.hero-card button{position:relative;z-index:1;background:var(--lime);color:#17152f;margin-top:7px}
+.section-heading,.week-summary{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.section-heading h2,.section-heading p{margin-bottom:0}
+.text-button{background:transparent;color:var(--brand);padding:6px}
+.ring-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.goal-ring{text-align:center;font-size:13px;font-weight:700}
+.ring-face,.week-ring{display:grid;place-content:center;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--ring) calc(var(--progress)*1%),#eceef3 0);position:relative;margin:auto auto 8px;max-width:116px;width:100%}
+.ring-face:before,.week-ring:before{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+.ring-face b,.ring-face small,.week-ring b,.week-ring small{position:relative;z-index:1}
+.ring-face b{font-size:22px}.ring-face small,.week-ring small{color:var(--muted);font-size:11px}
+.action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.quick-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;background:#fff;color:var(--ink);border:1px solid #eaecf0;border-radius:17px;padding:15px;box-shadow:0 6px 20px #1118270a}
+.quick-card>span{display:grid;place-content:center;width:36px;height:36px;border-radius:11px;background:#eeedff;color:var(--brand);font-size:20px;margin-bottom:10px}
+.quick-card small{color:var(--muted);font-weight:500;margin-top:3px}
+.workout-spotlight{display:flex;align-items:center;justify-content:space-between;gap:18px;border-left:5px solid var(--lime)}
+.empty-state{padding:16px 0}
+.training-hero{padding-bottom:0}.training-tabs{position:relative;z-index:1;display:flex;gap:4px;overflow:auto;margin:22px -10px 0}
+.training-tabs button{background:transparent;color:#b9b6cf;border-radius:0;border-bottom:3px solid transparent;padding:12px 14px}
+.training-tabs button.active{color:#fff;border-bottom-color:var(--lime)}
+.weekly-plan{border:0;background:linear-gradient(180deg,#fff,#f9f9fc)}
+.week-ring{--ring:var(--lime);--progress:0;flex:0 0 92px;background:conic-gradient(var(--brand) calc(var(--progress)*1%),#e8e7ef 0)}
+.week-ring b{font-size:20px}.workout-plan-card{display:flex;padding:0;overflow:hidden;background:#fff}.plan-accent{width:7px;background:linear-gradient(var(--lime),#77d744)}
+.plan-copy{padding:16px;flex:1}.plan-copy h3{margin-top:0}.compact-action{padding-inline:12px}
+.guided-workout .card{border-color:#333146}.guided-workout .workout-session-head,.guided-workout section.card{background:#1d1b27;color:#fff}
+.guided-workout .muted,.guided-workout .set-head{color:#b9b6c7}.guided-workout input,.guided-workout select,.guided-workout textarea{background:#292633;border-color:#444052;color:#fff}
+.guided-workout input[type=checkbox]{accent-color:var(--lime)}.guided-workout .notice{background:#302f22;border-color:#68652a;color:#f2efc2}.guided-workout .exercise-title{color:var(--lime)}
+.workout-actions{position:sticky;bottom:10px;z-index:5}.strength-chart{border-radius:16px;background:#fafafa;padding:6px}.strength-chart polyline{stroke:var(--brand)}
+@media(max-width:600px){main{padding-inline:11px}.hero-card,.training-hero{border-radius:20px}.ring-grid{gap:5px}.ring-face{max-width:94px}.ring-face:before{inset:7px}.ring-face b{font-size:18px}.action-grid{grid-template-columns:1fr 1fr}.quick-card:last-child{grid-column:1/-1}.workout-spotlight{align-items:flex-start;flex-direction:column}.week-summary{align-items:flex-start}.week-ring{flex-basis:78px}.training-tabs button{padding-inline:11px}.workout-plan-card .row button{flex:1}.compact-action{flex:0 0 auto!important}}
