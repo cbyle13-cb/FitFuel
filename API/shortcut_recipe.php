@@ -1,6 +1,7 @@
 <?php
 require_once 'session.php';
 require_once 'recipe_importer.php';
+require_once 'recipe_images.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['success' => false, 'message' => 'POST requests only.'], 405);
@@ -87,6 +88,7 @@ if (!is_array($in)) {
 }
 
 ensure_shortcut_tokens_table($conn);
+ensure_recipe_image_column($conn);
 $rawToken = shortcut_token_from_request($in);
 if ($rawToken === '' || strlen($rawToken) < 32) {
     json_response(['success' => false, 'message' => 'A valid FitFuel import key is required.'], 401);
@@ -120,6 +122,7 @@ if ($sharedUrl !== '') {
         if ($sharedText === '') json_response(['success' => false, 'message' => $e->getMessage()], $e->httpStatus);
         try {
             $in = array_merge($in, recipe_import_from_text($sharedText, $sharedUrl));
+            $in['image_url'] = recipe_import_source_image($sharedUrl);
         } catch (RecipeImportException $textError) {
             json_response(['success' => false, 'message' => $e->getMessage() . ' ' . $textError->getMessage()], 422);
         }
@@ -171,6 +174,8 @@ if ($instructions === '') {
 $description = clean_string($in['description'] ?? '', 5000);
 $sourceUrl = clean_string($in['source_url'] ?? '', 2000);
 if ($sourceUrl !== '' && !filter_var($sourceUrl, FILTER_VALIDATE_URL)) $sourceUrl = '';
+$imageUrl = clean_recipe_image_url($in['image_url'] ?? '');
+$imageUrl = $imageUrl !== '' ? $imageUrl : null;
 $sourceType = clean_string($in['source_type'] ?? 'shortcut', 50);
 $servings = isset($nutritionFromText['servings']) ? $nutritionFromText['servings'] : (float)($in['servings'] ?? 1);
 if ($servings <= 0) $servings = 1;
@@ -183,8 +188,8 @@ $fat = isset($nutritionFromText['fat_per_serving']) ? $nutritionFromText['fat_pe
 $fiber = isset($nutritionFromText['fiber_per_serving']) ? $nutritionFromText['fiber_per_serving'] : (float)($in['fiber_per_serving'] ?? 0);
 $fav = (int)($in['is_favorite'] ?? 0) ? 1 : 0;
 
-$st = $conn->prepare("INSERT INTO recipes(user_id,recipe_name,description,source_url,source_type,ingredients,instructions,servings,prep_time_minutes,cook_time_minutes,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,is_favorite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-$st->bind_param('issssssdiidddddi', $uid, $name, $description, $sourceUrl, $sourceType, $ingredientsJson, $instructions, $servings, $prep, $cook, $cal, $pro, $carbs, $fat, $fiber, $fav);
+$st = $conn->prepare("INSERT INTO recipes(user_id,recipe_name,description,source_url,image_url,source_type,ingredients,instructions,servings,prep_time_minutes,cook_time_minutes,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,is_favorite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+$st->bind_param('isssssssdiidddddi', $uid, $name, $description, $sourceUrl, $imageUrl, $sourceType, $ingredientsJson, $instructions, $servings, $prep, $cook, $cal, $pro, $carbs, $fat, $fiber, $fav);
 if (!$st->execute()) {
     $st->close();
     json_response(['success' => false, 'message' => 'Unable to save recipe to FitFuel.'], 500);
