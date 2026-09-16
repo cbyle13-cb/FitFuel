@@ -54,3 +54,15 @@ test('recipe source photos are extracted, saved, and displayed', () => {
   assert.match(app, /recipe-photo/);
   assert.match(app, /recipe-detail-photo/);
 });
+
+test('recipe cards open a scalable full-recipe dialog', () => {
+  const app = read('index.html');
+  const styles = read('ui-refresh.css');
+  assert.match(app, /onclick="openRecipe\(/);
+  assert.match(app, /dialog\.showModal\(\)/);
+  assert.match(app, /id="servingSlider"/);
+  assert.match(app, /RecipeCore\.scaledIngredients/);
+  assert.match(app, /Whole recipe:/);
+  assert.match(styles, /\.recipe-photo[^}]*object-fit:contain/);
+  assert.match(styles, /\.recipe-popup-photo/);
+});
