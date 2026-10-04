@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const context={};vm.runInNewContext(fs.readFileSync('dashboard.js','utf8')+';this.dashboard=Dashboard;',context);const d=context.dashboard;
+test('macro percentages use energy rather than gram proportions',()=>{const parts=d.macros({fat:20,carb:45,pro:45});parts.forEach(p=>assert(Math.abs(p-100/3)<1e-10));assert.deepEqual(Array.from(d.macros({})),[0,0,0]);});
+test('weekly dates stay Monday through Sunday across month boundaries',()=>{assert.deepEqual(Array.from(d.week('2026-10-03')),['2026-09-28','2026-09-29','2026-09-30','2026-10-01','2026-10-02','2026-10-03','2026-10-04']);assert.equal(d.shift('2026-03-08',1),'2026-03-09');});
+test('streak counts logged days, tolerates today not started, and stops at gaps',()=>{const rows=['2026-09-30','2026-10-01','2026-10-02'].map(date=>({date,entries:1}));assert.equal(d.streak(rows,'2026-10-03'),3);assert.equal(d.streak(rows,'2026-10-04'),0);assert.equal(d.streak([...rows,{date:'2026-10-03',entries:1}],'2026-10-03'),4);});

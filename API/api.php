@@ -8,6 +8,15 @@ function recipeRow($c,$id){$st=$c->prepare("SELECT * FROM recipes WHERE id=? LIM
 function recipesFor($c,$uid){$fid=family_id_for_user($c,$uid);if($fid){$st=$c->prepare("SELECT r.* FROM recipes r LEFT JOIN family_members fm ON fm.user_id=r.user_id AND fm.family_id=? WHERE r.user_id IS NULL OR fm.family_id=? ORDER BY r.recipe_name");$st->bind_param("ii",$fid,$fid);}else{$st=$c->prepare("SELECT * FROM recipes WHERE user_id IS NULL OR user_id=? ORDER BY recipe_name");$st->bind_param("i",$uid);}$st->execute();$a=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();foreach($a as&$r)$r['ingredients']=json_decode($r['ingredients']??'[]',true)?:preg_split('/\r\n|\r|\n/',$r['ingredients']??'',-1,PREG_SPLIT_NO_EMPTY);return$a;}
 if($method==='GET'){
 $action=$_GET['action']??'bootstrap';
+if($action==='dashboard'){
+$date=$_GET['date']??date('Y-m-d');$parsed=DateTimeImmutable::createFromFormat('!Y-m-d',$date);
+if(!$parsed||$parsed->format('Y-m-d')!==$date)json_response(['success'=>false,'message'=>'Invalid dashboard date.'],400);
+$weekStart=$parsed->modify('-'.((int)$parsed->format('N')-1).' days');$end=$weekStart->modify('+6 days')->format('Y-m-d');
+$st=$conn->prepare("SELECT food_date AS date,COUNT(*) AS entries,COALESCE(SUM(calories*servings),0) AS cal,COALESCE(SUM(protein_g*servings),0) AS pro,COALESCE(SUM(carbs_g*servings),0) AS carb,COALESCE(SUM(fat_g*servings),0) AS fat,COALESCE(SUM(fiber_g*servings),0) AS fiber FROM food_logs WHERE user_id=? AND food_date<=? GROUP BY food_date ORDER BY food_date");
+$st->bind_param("is",$uid,$end);$st->execute();$days=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();
+$st=$conn->prepare("SELECT COALESCE(SUM(ounces),0) total FROM water_logs WHERE user_id=? AND log_date=?");$st->bind_param("is",$uid,$date);$st->execute();$water=(float)($st->get_result()->fetch_assoc()['total']??0);$st->close();
+json_response(['success'=>true,'date'=>$date,'days'=>$days,'water'=>$water]);
+}
 if($action==='bootstrap'){
 $u=current_user($conn,$uid);$st=$conn->prepare("SELECT * FROM user_profiles WHERE user_id=?");$st->bind_param("i",$uid);$st->execute();$profile=$st->get_result()->fetch_assoc()?:[];$st->close();$date=$_GET['date']??date('Y-m-d');
 $st=$conn->prepare("SELECT id,meal_type,food_name,servings,calories,protein_g,carbs_g,fat_g,fiber_g,notes,recipe_id,barcode,brand,serving_size,serving_unit,source,created_at FROM food_logs WHERE user_id=? AND food_date=? ORDER BY id DESC");$st->bind_param("is",$uid,$date);$st->execute();$food=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();
