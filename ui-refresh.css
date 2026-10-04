@@ -58,3 +58,27 @@ main{padding-top:18px}
 .serving-control input[type=range]{width:100%;margin:18px 0 5px;accent-color:var(--brand)}.slider-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
 .recipe-ingredients{padding-left:22px}.recipe-ingredients li{margin:8px 0}.recipe-instructions{white-space:pre-wrap;line-height:1.65}.recipe-popup-actions{align-items:center;margin-top:24px}.source-link{color:var(--brand);font-weight:700;text-decoration:none}.source-link:hover{text-decoration:underline}
 @media(max-width:600px){main{padding-inline:11px}.hero-card,.training-hero{border-radius:20px}.ring-grid{gap:5px}.ring-face{max-width:94px}.ring-face:before{inset:7px}.ring-face b{font-size:18px}.action-grid{grid-template-columns:1fr 1fr}.quick-card:last-child{grid-column:1/-1}.workout-spotlight{align-items:flex-start;flex-direction:column}.week-summary{align-items:flex-start}.week-ring{flex-basis:78px}.training-tabs button{padding-inline:11px}.workout-plan-card .row button{flex:1}.compact-action{flex:0 0 auto!important}.recipe-dialog{width:96vw;max-height:94vh;border-radius:19px}.recipe-popup-photo{height:260px}.recipe-popup-content{padding:20px 17px 24px}.recipe-popup-content h2{font-size:26px}.recipe-nutrition{grid-template-columns:repeat(3,1fr)}.recipe-popup-actions{align-items:flex-start;flex-direction:column}}
+/* Nutrition pages share the dashboard and training visual language. */
+.nutrition-page button:not(.danger):not(.secondary):not(.hero-secondary):not(.recipe-name-button):not(.recipe-image-button):not(.meal-recipe){background:var(--brand)}
+.nutrition-page .hero-card button:not(.hero-secondary){background:var(--lime);color:var(--brand-dark)}
+.nutrition-page .hero-card .hero-secondary{background:#ffffff18;color:#fff;border:1px solid #ffffff40;margin-top:7px}
+.nutrition-page .hero-card .eyebrow{color:var(--lime)}
+.nutrition-page .hero-card .row{position:relative;z-index:1}
+.nutrition-page .badge{background:#eeedff;color:#554bc4;padding:6px 10px}
+.nutrition-page .secondary{background:#eeedff;color:#554bc4}
+.nutrition-page .fooditem{background:#f9f9fc;border-color:#eaecf0;border-radius:15px}
+.nutrition-page .fooditem .row>div{flex:1;min-width:160px}
+.nutrition-page .fooditem .muted{margin-top:6px;line-height:1.5}
+.nutrition-page button.danger{background:#fff0f0;color:#b42318;padding:8px 10px}
+.nutrition-page .macro-footer{text-align:center;border-top:1px solid #eaecf0;padding-top:14px;margin-bottom:0}
+.nutrition-page input[type=search]{background:#f9f9fc;border-color:#eaecf0;border-radius:13px;padding:13px}
+.nutrition-page input:focus-visible,.nutrition-page button:focus-visible{outline:3px solid #8178ff;outline-offset:3px}
+.nutrition-page .recipe-card{border-radius:18px;box-shadow:0 6px 20px #1118270a}
+.nutrition-page .recipe-card-body>.muted{margin-top:10px;line-height:1.6}
+.meal-plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.meal-plan-grid .meal-day{margin:0;border-top:4px solid #dedaff;min-width:0}
+.meal-plan-grid .meal-day:first-child{border-top-color:var(--lime)}
+.nutrition-page .meal-recipe{background:#f9f9fc;border-color:#eaecf0;border-radius:15px;padding:15px}
+.nutrition-page .meal-recipe:hover{background:#eeedff}
+.nutrition-page .recipe-link{color:var(--brand)}
+@media(max-width:600px){.meal-plan-grid{grid-template-columns:1fr}.nutrition-page .hero-card{padding:22px 18px}.nutrition-page .hero-card .row{gap:8px}.nutrition-page .hero-card button{flex:1 1 auto}.nutrition-page .recipe-grid{grid-template-columns:1fr}.nutrition-page .section-heading{gap:10px}.nutrition-page .section-heading .badge{flex-shrink:0}}
