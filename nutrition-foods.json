@@ -1,0 +1,542 @@
+[
+  {
+    "name": "chicken breast",
+    "values": [
+      120,
+      22.5,
+      0,
+      2.6,
+      0
+    ],
+    "cup_grams": 140,
+    "each_grams": null
+  },
+  {
+    "name": "lean ground turkey",
+    "values": [
+      150,
+      21,
+      0,
+      7.3,
+      0
+    ],
+    "cup_grams": 140,
+    "each_grams": null
+  },
+  {
+    "name": "lean ground beef",
+    "values": [
+      172,
+      21,
+      0,
+      9,
+      0
+    ],
+    "cup_grams": 140,
+    "each_grams": null
+  },
+  {
+    "name": "canned tuna drained",
+    "values": [
+      116,
+      25.5,
+      0,
+      0.8,
+      0
+    ],
+    "cup_grams": 154,
+    "each_grams": null
+  },
+  {
+    "name": "salmon",
+    "values": [
+      208,
+      20.4,
+      0,
+      13.4,
+      0
+    ],
+    "cup_grams": 140,
+    "each_grams": null
+  },
+  {
+    "name": "shrimp peeled",
+    "values": [
+      85,
+      20,
+      0,
+      0.5,
+      0
+    ],
+    "cup_grams": 140,
+    "each_grams": null
+  },
+  {
+    "name": "firm tofu",
+    "values": [
+      144,
+      17.3,
+      2.8,
+      8.7,
+      2.3
+    ],
+    "cup_grams": 248,
+    "each_grams": null
+  },
+  {
+    "name": "nonfat greek yogurt",
+    "values": [
+      59,
+      10.3,
+      3.6,
+      0.4,
+      0
+    ],
+    "cup_grams": 245,
+    "each_grams": null
+  },
+  {
+    "name": "low fat cottage cheese",
+    "values": [
+      81,
+      10.5,
+      4.8,
+      2.3,
+      0
+    ],
+    "cup_grams": 226,
+    "each_grams": null
+  },
+  {
+    "name": "egg whites",
+    "values": [
+      52,
+      10.9,
+      0.7,
+      0.2,
+      0
+    ],
+    "cup_grams": 243,
+    "each_grams": null
+  },
+  {
+    "name": "egg",
+    "values": [
+      143,
+      12.6,
+      0.7,
+      9.5,
+      0
+    ],
+    "cup_grams": null,
+    "each_grams": 50
+  },
+  {
+    "name": "rolled oats",
+    "values": [
+      389,
+      16.9,
+      66.3,
+      6.9,
+      10.6
+    ],
+    "cup_grams": 80,
+    "each_grams": null
+  },
+  {
+    "name": "dry rice",
+    "values": [
+      365,
+      7.1,
+      80,
+      0.7,
+      1.3
+    ],
+    "cup_grams": 185,
+    "each_grams": null
+  },
+  {
+    "name": "cooked rice",
+    "values": [
+      130,
+      2.7,
+      28.2,
+      0.3,
+      0.4
+    ],
+    "cup_grams": 158,
+    "each_grams": null
+  },
+  {
+    "name": "dry pasta",
+    "values": [
+      371,
+      13,
+      74.7,
+      1.5,
+      3.2
+    ],
+    "cup_grams": 100,
+    "each_grams": null
+  },
+  {
+    "name": "dry quinoa",
+    "values": [
+      368,
+      14.1,
+      64.2,
+      6.1,
+      7
+    ],
+    "cup_grams": 170,
+    "each_grams": null
+  },
+  {
+    "name": "black beans drained",
+    "values": [
+      132,
+      8.9,
+      23.7,
+      0.5,
+      8.7
+    ],
+    "cup_grams": 172,
+    "each_grams": null
+  },
+  {
+    "name": "kidney beans drained",
+    "values": [
+      127,
+      8.7,
+      22.8,
+      0.5,
+      6.4
+    ],
+    "cup_grams": 177,
+    "each_grams": null
+  },
+  {
+    "name": "potato",
+    "values": [
+      77,
+      2,
+      17.5,
+      0.1,
+      2.2
+    ],
+    "cup_grams": 150,
+    "each_grams": 173
+  },
+  {
+    "name": "sweet potato",
+    "values": [
+      86,
+      1.6,
+      20.1,
+      0.1,
+      3
+    ],
+    "cup_grams": 133,
+    "each_grams": 130
+  },
+  {
+    "name": "broccoli",
+    "values": [
+      34,
+      2.8,
+      6.6,
+      0.4,
+      2.6
+    ],
+    "cup_grams": 91,
+    "each_grams": null
+  },
+  {
+    "name": "spinach",
+    "values": [
+      23,
+      2.9,
+      3.6,
+      0.4,
+      2.2
+    ],
+    "cup_grams": 30,
+    "each_grams": null
+  },
+  {
+    "name": "bell pepper",
+    "values": [
+      31,
+      1,
+      6,
+      0.3,
+      2.1
+    ],
+    "cup_grams": 149,
+    "each_grams": 119
+  },
+  {
+    "name": "onion",
+    "values": [
+      40,
+      1.1,
+      9.3,
+      0.1,
+      1.7
+    ],
+    "cup_grams": 160,
+    "each_grams": 110
+  },
+  {
+    "name": "carrot",
+    "values": [
+      41,
+      0.9,
+      9.6,
+      0.2,
+      2.8
+    ],
+    "cup_grams": 128,
+    "each_grams": 61
+  },
+  {
+    "name": "canned tomatoes",
+    "values": [
+      22,
+      1.1,
+      4.8,
+      0.2,
+      1.5
+    ],
+    "cup_grams": 240,
+    "each_grams": null
+  },
+  {
+    "name": "blueberries",
+    "values": [
+      57,
+      0.7,
+      14.5,
+      0.3,
+      2.4
+    ],
+    "cup_grams": 148,
+    "each_grams": null
+  },
+  {
+    "name": "banana",
+    "values": [
+      89,
+      1.1,
+      22.8,
+      0.3,
+      2.6
+    ],
+    "cup_grams": 150,
+    "each_grams": 118
+  },
+  {
+    "name": "apple",
+    "values": [
+      52,
+      0.3,
+      13.8,
+      0.2,
+      2.4
+    ],
+    "cup_grams": 125,
+    "each_grams": 182
+  },
+  {
+    "name": "olive oil",
+    "values": [
+      884,
+      0,
+      0,
+      100,
+      0
+    ],
+    "cup_grams": 216,
+    "each_grams": null
+  },
+  {
+    "name": "peanut butter",
+    "values": [
+      588,
+      25,
+      20,
+      50,
+      6
+    ],
+    "cup_grams": 256,
+    "each_grams": null
+  },
+  {
+    "name": "almonds",
+    "values": [
+      579,
+      21.2,
+      21.6,
+      49.9,
+      12.5
+    ],
+    "cup_grams": 143,
+    "each_grams": null
+  },
+  {
+    "name": "cheddar cheese",
+    "values": [
+      403,
+      25,
+      1.3,
+      33,
+      0
+    ],
+    "cup_grams": 113,
+    "each_grams": null
+  },
+  {
+    "name": "parmesan cheese",
+    "values": [
+      431,
+      38,
+      4,
+      29,
+      0
+    ],
+    "cup_grams": 100,
+    "each_grams": null
+  },
+  {
+    "name": "whole wheat tortilla",
+    "values": [
+      310,
+      9.7,
+      52,
+      8,
+      8
+    ],
+    "cup_grams": null,
+    "each_grams": 60
+  },
+  {
+    "name": "whole wheat bread",
+    "values": [
+      247,
+      13,
+      41,
+      4.2,
+      7
+    ],
+    "cup_grams": null,
+    "each_grams": 28
+  },
+  {
+    "name": "nonfat milk",
+    "values": [
+      34,
+      3.4,
+      5,
+      0.1,
+      0
+    ],
+    "cup_grams": 245,
+    "each_grams": null
+  },
+  {
+    "name": "honey",
+    "values": [
+      304,
+      0,
+      82.4,
+      0,
+      0
+    ],
+    "cup_grams": 340,
+    "each_grams": null
+  },
+  {
+    "name": "salsa",
+    "values": [
+      29,
+      1,
+      6,
+      0,
+      1.8
+    ],
+    "cup_grams": 256,
+    "each_grams": null
+  },
+  {
+    "name": "garlic",
+    "values": [
+      149,
+      6.4,
+      33.1,
+      0.5,
+      2.1
+    ],
+    "cup_grams": 136,
+    "each_grams": 3
+  },
+  {
+    "name": "lemon juice",
+    "values": [
+      22,
+      0.4,
+      6.9,
+      0.2,
+      0.3
+    ],
+    "cup_grams": 244,
+    "each_grams": null
+  },
+  {
+    "name": "salt",
+    "values": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cup_grams": 288,
+    "each_grams": null
+  },
+  {
+    "name": "black pepper",
+    "values": [
+      251,
+      10.4,
+      64,
+      3.3,
+      25
+    ],
+    "cup_grams": 100,
+    "each_grams": null
+  },
+  {
+    "name": "paprika",
+    "values": [
+      282,
+      14.1,
+      54,
+      12.9,
+      34.9
+    ],
+    "cup_grams": 108,
+    "each_grams": null
+  },
+  {
+    "name": "cumin",
+    "values": [
+      375,
+      17.8,
+      44.2,
+      22.3,
+      10.5
+    ],
+    "cup_grams": 96,
+    "each_grams": null
+  }
+]

@@ -1,0 +1,358 @@
+[
+  {
+    "starter_key": "ff-protein-v1-oats",
+    "recipe_name": "Greek Yogurt Overnight Oats",
+    "meal_category": "breakfast",
+    "servings": 4,
+    "ingredients": [
+      "1000 g nonfat greek yogurt",
+      "200 g rolled oats",
+      "300 g blueberries",
+      "60 g peanut butter"
+    ],
+    "instructions": "1. Stir yogurt, oats and peanut butter together.\n2. Divide into four containers, top with blueberries and refrigerate overnight.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 472.9,
+    "protein_per_serving": 38.5,
+    "carbs_per_serving": 56.0,
+    "fat_per_serving": 12.2,
+    "fiber_per_serving": 8.0
+  },
+  {
+    "starter_key": "ff-protein-v1-eggs",
+    "recipe_name": "Egg and Potato Breakfast Bowls",
+    "meal_category": "breakfast",
+    "servings": 4,
+    "ingredients": [
+      "800 g egg whites",
+      "200 g egg",
+      "800 g potato",
+      "200 g spinach",
+      "20 g olive oil"
+    ],
+    "instructions": "1. Dice potatoes and roast with oil at 400\u00b0F until tender, about 25\u201335 minutes.\n2. Scramble eggs and whites until firm, then wilt spinach.\n3. Divide into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 385.2,
+    "protein_per_serving": 33.6,
+    "carbs_per_serving": 38.5,
+    "fat_per_serving": 10.6,
+    "fiber_per_serving": 5.5
+  },
+  {
+    "starter_key": "ff-protein-v1-toast",
+    "recipe_name": "Cottage Cheese Egg Toast",
+    "meal_category": "breakfast",
+    "servings": 4,
+    "ingredients": [
+      "800 g low fat cottage cheese",
+      "600 g egg whites",
+      "224 g whole wheat bread",
+      "200 g spinach"
+    ],
+    "instructions": "1. Scramble egg whites until set and wilt spinach.\n2. Toast bread and top with cottage cheese and eggs.\n3. Divide into four portions; store toppings separately from bread.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 389.8,
+    "protein_per_serving": 46.1,
+    "carbs_per_serving": 35.4,
+    "fat_per_serving": 7.5,
+    "fiber_per_serving": 5.0
+  },
+  {
+    "starter_key": "ff-protein-v1-banana",
+    "recipe_name": "Banana Yogurt Oat Bowls",
+    "meal_category": "breakfast",
+    "servings": 4,
+    "ingredients": [
+      "1200 g nonfat greek yogurt",
+      "200 g rolled oats",
+      "400 g banana",
+      "60 g almonds"
+    ],
+    "instructions": "1. Divide yogurt and oats into four bowls and refrigerate overnight.\n2. Add sliced banana and almonds when serving.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 547.4,
+    "protein_per_serving": 43.6,
+    "carbs_per_serving": 70.0,
+    "fat_per_serving": 12.4,
+    "fiber_per_serving": 9.8
+  },
+  {
+    "starter_key": "ff-protein-v1-chicken-rice",
+    "recipe_name": "Lemon Chicken Rice Bowls",
+    "meal_category": "lunch",
+    "servings": 4,
+    "ingredients": [
+      "800 g chicken breast",
+      "300 g dry rice",
+      "600 g broccoli",
+      "30 g olive oil",
+      "60 g lemon juice",
+      "12 g garlic"
+    ],
+    "instructions": "1. Cook rice according to package directions.\n2. Dice chicken and cook with oil, garlic and lemon juice until it reaches 165\u00b0F.\n3. Steam broccoli until tender and divide all ingredients into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 638.8,
+    "protein_per_serving": 54.8,
+    "carbs_per_serving": 71.9,
+    "fat_per_serving": 13.9,
+    "fiber_per_serving": 5.0
+  },
+  {
+    "starter_key": "ff-protein-v1-turkey-taco",
+    "recipe_name": "Turkey Taco Rice Bowls",
+    "meal_category": "lunch",
+    "servings": 4,
+    "ingredients": [
+      "800 g lean ground turkey",
+      "250 g dry rice",
+      "400 g black beans drained",
+      "300 g bell pepper",
+      "200 g salsa",
+      "4 g cumin"
+    ],
+    "instructions": "1. Cook rice according to package directions.\n2. Brown turkey to 165\u00b0F with diced pepper and cumin.\n3. Heat beans and divide everything into four bowls with salsa.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 701.6,
+    "protein_per_serving": 56.8,
+    "carbs_per_serving": 81.6,
+    "fat_per_serving": 16.0,
+    "fiber_per_serving": 12.1
+  },
+  {
+    "starter_key": "ff-protein-v1-tuna",
+    "recipe_name": "Tuna Yogurt Wraps",
+    "meal_category": "lunch",
+    "servings": 4,
+    "ingredients": [
+      "600 g canned tuna drained",
+      "300 g nonfat greek yogurt",
+      "240 g whole wheat tortilla",
+      "200 g carrot",
+      "100 g spinach"
+    ],
+    "instructions": "1. Stir drained tuna with yogurt and grated carrot.\n2. Divide over four tortillas with spinach.\n3. Wrap just before eating; refrigerate filling separately.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 430.5,
+    "protein_per_serving": 53.0,
+    "carbs_per_serving": 39.6,
+    "fat_per_serving": 6.5,
+    "fiber_per_serving": 6.7
+  },
+  {
+    "starter_key": "ff-protein-v1-chicken-potato",
+    "recipe_name": "Chicken and Sweet Potato Prep",
+    "meal_category": "lunch",
+    "servings": 4,
+    "ingredients": [
+      "800 g chicken breast",
+      "1000 g sweet potato",
+      "600 g broccoli",
+      "30 g olive oil",
+      "4 g paprika"
+    ],
+    "instructions": "1. Dice sweet potatoes, toss with oil and paprika, and roast at 400\u00b0F until tender.\n2. Roast chicken until it reaches 165\u00b0F and steam broccoli.\n3. Divide into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 575.1,
+    "protein_per_serving": 53.3,
+    "carbs_per_serving": 60.7,
+    "fat_per_serving": 13.7,
+    "fiber_per_serving": 11.7
+  },
+  {
+    "starter_key": "ff-protein-v1-tofu",
+    "recipe_name": "Tofu Black Bean Quinoa Bowls",
+    "meal_category": "lunch",
+    "servings": 4,
+    "ingredients": [
+      "800 g firm tofu",
+      "500 g black beans drained",
+      "220 g dry quinoa",
+      "300 g bell pepper",
+      "200 g salsa"
+    ],
+    "instructions": "1. Cook quinoa according to package directions.\n2. Roast cubed tofu and peppers at 400\u00b0F until hot and lightly browned.\n3. Heat beans and divide with quinoa, tofu and salsa into four bowls.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 693.1,
+    "protein_per_serving": 54.7,
+    "carbs_per_serving": 78.0,
+    "fat_per_serving": 21.6,
+    "fiber_per_serving": 21.8
+  },
+  {
+    "starter_key": "ff-protein-v1-chili",
+    "recipe_name": "Lean Beef and Bean Chili",
+    "meal_category": "dinner",
+    "servings": 4,
+    "ingredients": [
+      "800 g lean ground beef",
+      "600 g kidney beans drained",
+      "800 g canned tomatoes",
+      "200 g onion",
+      "200 g bell pepper",
+      "4 g cumin"
+    ],
+    "instructions": "1. Brown beef with diced onion and pepper until beef reaches 160\u00b0F.\n2. Add beans, tomatoes and cumin, and simmer for 20 minutes.\n3. Divide into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 617.8,
+    "protein_per_serving": 58.5,
+    "carbs_per_serving": 51.9,
+    "fat_per_serving": 19.6,
+    "fiber_per_serving": 14.6
+  },
+  {
+    "starter_key": "ff-protein-v1-pasta",
+    "recipe_name": "Chicken Yogurt Alfredo Pasta",
+    "meal_category": "dinner",
+    "servings": 4,
+    "ingredients": [
+      "800 g chicken breast",
+      "300 g dry pasta",
+      "400 g nonfat greek yogurt",
+      "60 g parmesan cheese",
+      "400 g broccoli",
+      "12 g garlic"
+    ],
+    "instructions": "1. Cook pasta and broccoli until tender.\n2. Cook diced chicken and garlic until chicken reaches 165\u00b0F.\n3. Remove from heat, stir in yogurt and parmesan with a little pasta water, then divide into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 680.4,
+    "protein_per_serving": 73.7,
+    "carbs_per_serving": 67.8,
+    "fat_per_serving": 11.5,
+    "fiber_per_serving": 5.1
+  },
+  {
+    "starter_key": "ff-protein-v1-salmon",
+    "recipe_name": "Salmon Quinoa and Broccoli",
+    "meal_category": "dinner",
+    "servings": 4,
+    "ingredients": [
+      "800 g salmon",
+      "240 g dry quinoa",
+      "600 g broccoli",
+      "20 g olive oil",
+      "60 g lemon juice"
+    ],
+    "instructions": "1. Cook quinoa according to package directions.\n2. Roast salmon with oil and lemon at 400\u00b0F until it reaches 145\u00b0F.\n3. Steam broccoli and divide into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 735.3,
+    "protein_per_serving": 53.5,
+    "carbs_per_serving": 49.5,
+    "fat_per_serving": 36.1,
+    "fiber_per_serving": 8.1
+  },
+  {
+    "starter_key": "ff-protein-v1-shrimp",
+    "recipe_name": "Shrimp Rice Skillet",
+    "meal_category": "dinner",
+    "servings": 4,
+    "ingredients": [
+      "1000 g shrimp peeled",
+      "300 g dry rice",
+      "400 g bell pepper",
+      "200 g onion",
+      "30 g olive oil",
+      "12 g garlic"
+    ],
+    "instructions": "1. Cook rice according to package directions.\n2. Saut\u00e9 diced pepper, onion and garlic in oil until tender.\n3. Add shrimp and cook to 145\u00b0F, until opaque. Stir in rice and divide into four portions.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 608.0,
+    "protein_per_serving": 57.1,
+    "carbs_per_serving": 71.6,
+    "fat_per_serving": 9.6,
+    "fiber_per_serving": 4.0
+  },
+  {
+    "starter_key": "ff-protein-v1-burger",
+    "recipe_name": "Beef Burger Potato Bowls",
+    "meal_category": "dinner",
+    "servings": 4,
+    "ingredients": [
+      "800 g lean ground beef",
+      "1000 g potato",
+      "300 g bell pepper",
+      "100 g cheddar cheese",
+      "200 g nonfat greek yogurt"
+    ],
+    "instructions": "1. Roast diced potatoes and peppers at 400\u00b0F until tender.\n2. Brown beef to 160\u00b0F.\n3. Divide into four bowls, add cheese and serve yogurt on the side.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 690.0,
+    "protein_per_serving": 59.1,
+    "carbs_per_serving": 50.4,
+    "fat_per_serving": 26.9,
+    "fiber_per_serving": 7.1
+  },
+  {
+    "starter_key": "ff-protein-v1-yogurt-snack",
+    "recipe_name": "Greek Yogurt Peanut Butter Cups",
+    "meal_category": "snack",
+    "servings": 4,
+    "ingredients": [
+      "1200 g nonfat greek yogurt",
+      "100 g peanut butter",
+      "300 g blueberries"
+    ],
+    "instructions": "1. Stir yogurt and peanut butter together.\n2. Divide into four cups, top with blueberries and refrigerate.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 366.8,
+    "protein_per_serving": 37.7,
+    "carbs_per_serving": 26.7,
+    "fat_per_serving": 13.9,
+    "fiber_per_serving": 3.3
+  },
+  {
+    "starter_key": "ff-protein-v1-cottage-snack",
+    "recipe_name": "Cottage Cheese Apple Bowls",
+    "meal_category": "snack",
+    "servings": 4,
+    "ingredients": [
+      "1200 g low fat cottage cheese",
+      "600 g apple",
+      "60 g almonds"
+    ],
+    "instructions": "1. Divide cottage cheese into four bowls.\n2. Top with diced apple and almonds when serving.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 407.9,
+    "protein_per_serving": 35.1,
+    "carbs_per_serving": 38.3,
+    "fat_per_serving": 14.7,
+    "fiber_per_serving": 5.5
+  },
+  {
+    "starter_key": "ff-protein-v1-tuna-snack",
+    "recipe_name": "Tuna Toast Snack Plates",
+    "meal_category": "snack",
+    "servings": 4,
+    "ingredients": [
+      "500 g canned tuna drained",
+      "200 g nonfat greek yogurt",
+      "112 g whole wheat bread",
+      "200 g carrot"
+    ],
+    "instructions": "1. Stir tuna and yogurt together.\n2. Divide into four portions with toasted bread and carrot sticks. Store filling separately.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 264.2,
+    "protein_per_serving": 41.1,
+    "carbs_per_serving": 18.1,
+    "fat_per_serving": 2.5,
+    "fiber_per_serving": 3.4
+  },
+  {
+    "starter_key": "ff-protein-v1-yogurt-smoothie",
+    "recipe_name": "Banana Greek Yogurt Smoothie",
+    "meal_category": "snack",
+    "servings": 4,
+    "ingredients": [
+      "1000 g nonfat greek yogurt",
+      "800 g nonfat milk",
+      "400 g banana",
+      "100 g rolled oats"
+    ],
+    "instructions": "1. Blend yogurt, milk, banana and oats until smooth.\n2. Divide into four servings. For prep, store measured ingredients separately and blend when needed.",
+    "nutrition_status": "estimated",
+    "calories_per_serving": 401.8,
+    "protein_per_serving": 37.9,
+    "carbs_per_serving": 58.4,
+    "fat_per_serving": 3.2,
+    "fiber_per_serving": 5.2
+  }
+]

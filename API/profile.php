@@ -1,38 +1,19 @@
 <?php
-require_once 'db.php';
-function start_fitfuel_session(): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_set_cookie_params(['lifetime'=>0,'path'=>'/','secure'=>true,'httponly'=>true,'samesite'=>'Lax']);
-        session_start();
-    }
-}
-function json_response(array $data,int $status=200): void {
-    http_response_code($status); header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($data,JSON_UNESCAPED_SLASHES); exit;
-}
-function require_login(): int {
-    start_fitfuel_session(); $id=(int)($_SESSION['user_id']??0);
-    if($id<1) json_response(['success'=>false,'message'=>'Please log in.'],401); return $id;
-}
-function current_user(mysqli $conn,int $uid): array {
-    $st=$conn->prepare("SELECT id,email,first_name,last_name,role,is_active FROM users WHERE id=? LIMIT 1");
-    $st->bind_param("i",$uid);$st->execute();$u=$st->get_result()->fetch_assoc();$st->close();
-    if(!$u || (int)$u['is_active']!==1) json_response(['success'=>false,'message'=>'Account unavailable.'],403);
-    return $u;
-}
-function family_id_for_user(mysqli $conn,int $uid): ?int {
-    $st=$conn->prepare("SELECT family_id FROM family_members WHERE user_id=? LIMIT 1");
-    $st->bind_param("i",$uid);$st->execute();$r=$st->get_result()->fetch_assoc();$st->close();
-    return $r?(int)$r['family_id']:null;
-}
-?>
-<?php
-$uid=require_login();
-if($_SERVER['REQUEST_METHOD']==='GET'){
-$st=$conn->prepare("SELECT date_of_birth,height_inches,current_weight,goal_weight,activity_level,fitness_goal,daily_calorie_goal,daily_protein_goal,daily_carbs_goal,daily_fat_goal,daily_fiber_goal FROM user_profiles WHERE user_id=?");$st->bind_param("i",$uid);$st->execute();$p=$st->get_result()->fetch_assoc()?:[];$st->close();json_response(['success'=>true,'profile'=>$p]);
-}
+require_once 'session.php';
+require_once 'nutrition_store.php';
+$uid=require_login();ff_ensure_schema($conn);
+if($_SERVER['REQUEST_METHOD']==='GET')json_response(['success'=>true,'profile'=>ff_profile($conn,$uid)]);
+if($_SERVER['REQUEST_METHOD']!=='POST')json_response(['success'=>false,'message'=>'POST required.'],405);
 $in=json_decode(file_get_contents('php://input'),true);if(!is_array($in))json_response(['success'=>false,'message'=>'Invalid request.'],400);
-$dob=$in['date_of_birth']??null;$h=$in['height_inches']??null;$w=$in['current_weight']??null;$g=$in['goal_weight']??null;$a=$in['activity_level']??null;$fg=$in['fitness_goal']??null;$c=$in['daily_calorie_goal']??null;$p=$in['daily_protein_goal']??null;$cb=$in['daily_carbs_goal']??null;$f=$in['daily_fat_goal']??null;$fi=$in['daily_fiber_goal']??null;
-$st=$conn->prepare("UPDATE user_profiles SET date_of_birth=?,height_inches=?,current_weight=?,goal_weight=?,activity_level=?,fitness_goal=?,daily_calorie_goal=?,daily_protein_goal=?,daily_carbs_goal=?,daily_fat_goal=?,daily_fiber_goal=? WHERE user_id=?");$st->bind_param("sdddssdddddi",$dob,$h,$w,$g,$a,$fg,$c,$p,$cb,$f,$fi,$uid);
-if(!$st->execute())json_response(['success'=>false,'message'=>'Unable to save profile.'],500);$st->close();json_response(['success'=>true,'message'=>'Profile saved.']);
-?>
+try{
+    $old=ff_profile($conn,$uid);$p=array_merge($old,$in);
+    $prefs=[];foreach(['sex','planner_activity','planner_goal','meals_per_day','excluded_foods','daily_water_goal','auto_targets'] as $k)$prefs[$k]=$p[$k]??null;
+    $prefs['auto_targets']=(bool)$prefs['auto_targets'];$prefs['meals_per_day']=(int)($prefs['meals_per_day']??4);$prefs['daily_water_goal']=(float)($prefs['daily_water_goal']??100);$prefs['excluded_foods']=trim((string)($prefs['excluded_foods']??''));
+    if($prefs['meals_per_day']<2||$prefs['meals_per_day']>6||$prefs['daily_water_goal']<=0||$prefs['daily_water_goal']>300||strlen($prefs['excluded_foods'])>2000)throw new InvalidArgumentException('Choose 2–6 meals, a water goal of 1–300 oz, and a shorter food exclusion list.');
+    if($prefs['auto_targets'])$p=array_merge($p,ff_targets(array_merge($p,$prefs)));
+    foreach(['daily_calorie_goal','daily_protein_goal','daily_carbs_goal','daily_fat_goal','daily_fiber_goal'] as $k)if($p[$k]!==null&&(!is_numeric($p[$k])||(float)$p[$k]<0||(float)$p[$k]>10000))throw new InvalidArgumentException('Enter valid daily targets.');
+    foreach(['current_weight','goal_weight'] as $k)if($p[$k]!==null&&((float)$p[$k]<50||(float)$p[$k]>1000))throw new InvalidArgumentException('Weight must be 50–1000 lb.');
+    $conn->begin_transaction();
+    $dob=$p['date_of_birth']??null;$h=$p['height_inches']??null;$w=$p['current_weight']??null;$g=$p['goal_weight']??null;
+    $st=$conn->prepare('UPDATE user_profiles SET date_of_birth=?,height_inches=?,current_weight=?,goal_weight=?,daily_calorie_goal=?,daily_protein_goal=?,daily_carbs_goal=?,daily_fat_goal=?,daily_fiber_goal=? WHERE user_id=?');$st->bind_param('sddddddddi',$dob,$h,$w,$g,$p['daily_calorie_goal'],$p['daily_protein_goal'],$p['daily_carbs_goal'],$p['daily_fat_goal'],$p['daily_fiber_goal'],$uid);$st->execute();$st->close();ff_save_prefs($conn,$uid,$prefs);$conn->commit();json_response(['success'=>true,'profile'=>ff_profile($conn,$uid)]);
+}catch(InvalidArgumentException $e){$conn->rollback();json_response(['success'=>false,'message'=>$e->getMessage()],422);}catch(Throwable $e){$conn->rollback();error_log($e->getMessage());json_response(['success'=>false,'message'=>'Unable to save profile.'],500);}

@@ -32,7 +32,7 @@
 <div class="grid"><div><label for="protein">Protein (g)</label><input id="protein" type="number" step="0.1"></div><div><label for="carbs">Carbs (g)</label><input id="carbs" type="number" step="0.1"></div></div>
 <div class="grid"><div><label for="fat">Fat (g)</label><input id="fat" type="number" step="0.1"></div><div><label for="fiber">Fiber (g)</label><input id="fiber" type="number" step="0.1"></div></div>
 <div class="grid"><div><label for="prep">Prep minutes</label><input id="prep" type="number"></div><div><label for="cook">Cook minutes</label><input id="cook" type="number"></div></div>
-<label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
+<button id="estimateBtn" class="secondary" type="button">Estimate nutrition from ingredients</button><p id="nutritionNotice" class="source-note"></p><label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
 <label for="imageUrl">Recipe photo from source</label><input id="imageUrl" type="url" inputmode="url" placeholder="Photo URL">
 <img id="imagePreview" class="photo-preview hidden" alt="Imported recipe preview" referrerpolicy="no-referrer">
 <button id="saveBtn">Save to FitFuel Recipes</button>
@@ -131,6 +131,7 @@ function fillStructuredRecipe(r){
  $('imageUrl').value=current.image_url||current.image||'';
  previewImage();
  $('form').classList.remove('hidden');
+ $('nutritionNotice').textContent=current.nutrition_notes||'Nutrition shown per serving. Check the whole recipe serving count before estimating.';
  message('Structured recipe received. Review it before saving.');
 }
 function cleanJsonText(value){
@@ -183,7 +184,7 @@ async function importRecipe(){
  finally{$('importBtn').disabled=false}
 }
 async function saveRecipe(){
- const payload={action:'recipe_add',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),image_url:$('imageUrl').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
+ const payload={action:'recipe_add',nutrition_status:current.nutrition_status||'provided',nutrition_notes:current.nutrition_notes||'',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),image_url:$('imageUrl').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
  if(!payload.recipe_name){saveMessage('Recipe name is required.');return}
  const saveBtn=$('saveBtn');
  saveBtn.disabled=true;
@@ -219,6 +220,12 @@ $('imagePreview').addEventListener('error',()=>{$('imagePreview').classList.add(
 $('enableKeyBtn').addEventListener('click',enableImportKey);
 $('clearKeyBtn').addEventListener('click',clearImportKey);
 $('saveBtn').addEventListener('click',saveRecipe);
+$('estimateBtn').addEventListener('click',async()=>{
+ const button=$('estimateBtn');button.disabled=true;
+ try{const r=await fetch('API/nutrition.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ingredients:listValue($('ingredients').value),servings:Number($('servings').value)})}),j=await r.json();if(!r.ok||!j.success)throw Error(j.message);current={...current,...j.estimate};for(const k of ['calories','protein','carbs','fat','fiber'])$(k).value=j.estimate[k+'_per_serving'];$('nutritionNotice').textContent=j.estimate.nutrition_notes;}catch(e){$('nutritionNotice').textContent=e.message;}finally{button.disabled=false;}
+});
+for(const id of ['calories','protein','carbs','fat','fiber'])$(id).addEventListener('input',()=>{current.nutrition_status='provided';current.nutrition_notes='Nutrition edited during import review.';});
+for(const id of ['ingredients','servings'])$(id).addEventListener('input',()=>{if(current.nutrition_status==='estimated'){current.nutrition_status='incomplete';$('nutritionNotice').textContent='Ingredients or yield changed. Estimate again or review all nutrition fields.';}});
 refreshKeyControls();
 const structured=readStructuredRecipe();if(!structured&&shared)setTimeout(importRecipe,150);
 </script></body></html>

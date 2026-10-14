@@ -10,7 +10,7 @@ test('routine editing, logging, history, charts and account changes',async()=>{
   if(opt?.method==='POST'){const body=JSON.parse(opt.body);if(body.action==='save'){const record={...body.record,id:body.id||nextId++};db=db.filter(r=>r.id!==record.id);db.push(record);return {success:true,id:record.id};}return {success:true};}
   return {success:true,records:db,legacy:[]};
  }});
- let html=fs.readFileSync('index.html','utf8'),inline=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1].replace('init();','');w.eval(inline+'\n'+fs.readFileSync('workout-core.js','utf8')+'\n'+fs.readFileSync('liift4.js','utf8')+'\n'+fs.readFileSync('workouts.js','utf8')+'\nwindow.testState=s;window.ui=WorkoutUI;');
+ let html=fs.readFileSync('index.html','utf8'),inline=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1].replace('init();','');w.eval(fs.readFileSync('meal-core.js','utf8')+'\n'+inline+'\n'+fs.readFileSync('workout-core.js','utf8')+'\n'+fs.readFileSync('liift4.js','utf8')+'\n'+fs.readFileSync('workouts.js','utf8')+'\nwindow.testState=s;window.ui=WorkoutUI;');
  w.testState.user={id:1,first_name:'Test'};w.testState.authenticated=true;
  await w.ui.open();w.ui.starter(0);assert.equal(w.document.querySelectorAll('#workoutEditor section').length,5);
  w.ui.top('name','Personal routine');w.ui.target(0,'weight',15);await w.ui.save('template');assert.equal(db[0].name,'Personal routine');assert.equal(db[0].exercises[0].sets[0].weight,15);
@@ -45,7 +45,7 @@ test('synced weekly plans are grouped and labeled by priority',async()=>{
  const catalog=JSON.parse(fs.readFileSync('exercises.json','utf8'));
  const weekly={schema:'fitfuel.workout.v1',kind:'template',id:7,name:'Strength A',date:'2026-09-14',day:'Monday',minutes:40,notes:'Controlled, pain-free form.',source:'chatgpt_weekly_plan',planWeek:'2026-09-14',priority:'priority',token:'12345678-1234-4123-a123-123456789012',exercises:[{exerciseId:catalog[0].id,min:8,max:12,weight:10,increment:5,cap:50,rest:60,effort:'unknown',sets:[{weight:10,reps:8,done:false}]}]};
  w.fetch=async(url)=>({ok:true,status:200,json:async()=>url.includes('exercises.json')?catalog:{success:true,records:[weekly],legacy:[]}});
- let html=fs.readFileSync('index.html','utf8'),inline=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1].replace('init();','');w.eval(inline+'\n'+fs.readFileSync('workout-core.js','utf8')+'\n'+fs.readFileSync('liift4.js','utf8')+'\n'+fs.readFileSync('workouts.js','utf8')+'\nwindow.testState=s;window.ui=WorkoutUI;');
+ let html=fs.readFileSync('index.html','utf8'),inline=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1].replace('init();','');w.eval(fs.readFileSync('meal-core.js','utf8')+'\n'+inline+'\n'+fs.readFileSync('workout-core.js','utf8')+'\n'+fs.readFileSync('liift4.js','utf8')+'\n'+fs.readFileSync('workouts.js','utf8')+'\nwindow.testState=s;window.ui=WorkoutUI;');
  w.testState.user={id:1,first_name:'Test'};w.testState.authenticated=true;await w.ui.open();
  const text=w.document.getElementById('app').textContent;assert.match(text,/This Week/);assert.match(text,/Priority/);assert.match(text,/Monday/);assert.match(text,/Strength A/);
  dom.window.close();

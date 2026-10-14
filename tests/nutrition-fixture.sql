@@ -1,0 +1,16 @@
+CREATE DATABASE fitfuel_test; USE fitfuel_test;
+CREATE TABLE users(id INT UNSIGNED PRIMARY KEY,email VARCHAR(100),first_name VARCHAR(100),last_name VARCHAR(100),role VARCHAR(20),is_active INT);
+INSERT INTO users VALUES(1,'test1@example.com','Test','One','user',1),(2,'test2@example.com','Test','Two','user',1);
+CREATE TABLE user_profiles(user_id INT UNSIGNED PRIMARY KEY,date_of_birth DATE,height_inches DECIMAL(6,2),current_weight DECIMAL(6,2),goal_weight DECIMAL(6,2),activity_level VARCHAR(30),fitness_goal VARCHAR(30),daily_calorie_goal DECIMAL(8,2),daily_protein_goal DECIMAL(8,2),daily_carbs_goal DECIMAL(8,2),daily_fat_goal DECIMAL(8,2),daily_fiber_goal DECIMAL(8,2));
+INSERT INTO user_profiles(user_id,current_weight,daily_calorie_goal,daily_protein_goal,daily_carbs_goal,daily_fat_goal) VALUES(1,223,2400,175,275,65),(2,150,1800,100,200,60);
+CREATE TABLE recipes(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED NULL,recipe_name VARCHAR(255),description TEXT,source_url VARCHAR(2048),source_type VARCHAR(50),ingredients TEXT,instructions TEXT,servings DECIMAL(6,2),prep_time_minutes INT,cook_time_minutes INT,calories_per_serving DECIMAL(8,2),protein_per_serving DECIMAL(8,2),carbs_per_serving DECIMAL(8,2),fat_per_serving DECIMAL(8,2),fiber_per_serving DECIMAL(8,2),is_favorite INT DEFAULT 0);
+INSERT INTO recipes(user_id,recipe_name,ingredients,instructions,servings,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving) VALUES(1,'Existing recipe','["800 g chicken breast"]','Cook.',4,400,40,40,8,2),(2,'Private recipe','["800 g chicken breast"]','Cook.',4,400,40,40,8,2);
+CREATE TABLE meal_plans(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,plan_date DATE,recipe_id INT UNSIGNED,meal_order INT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+INSERT INTO meal_plans(user_id,plan_date,recipe_id,meal_order) VALUES(1,'2026-10-11',1,1);
+CREATE TABLE food_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,food_date DATE,meal_type VARCHAR(20),food_name VARCHAR(255),servings DECIMAL(6,2),calories DECIMAL(8,2),protein_g DECIMAL(8,2),carbs_g DECIMAL(8,2),fat_g DECIMAL(8,2),fiber_g DECIMAL(8,2),notes TEXT,recipe_id INT UNSIGNED,barcode VARCHAR(32),brand VARCHAR(150),serving_size VARCHAR(100),serving_unit VARCHAR(30),source VARCHAR(50),created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+INSERT INTO food_logs(user_id,food_date,meal_type,food_name,servings,calories,source) VALUES(1,'2026-10-10','lunch','Preserved food',1,400,'manual');
+CREATE TABLE progress_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,log_date DATE,weight DECIMAL(6,2),body_fat_percent DECIMAL(6,2),waist_inches DECIMAL(6,2),chest_inches DECIMAL(6,2),hips_inches DECIMAL(6,2),arm_inches DECIMAL(6,2),thigh_inches DECIMAL(6,2),notes TEXT);
+INSERT INTO progress_logs(user_id,log_date,weight) VALUES(1,'2026-10-10',223);
+CREATE TABLE water_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,log_date DATE,ounces DECIMAL(7,2));
+CREATE TABLE workout_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,workout_date DATE,workout_name VARCHAR(255),duration_minutes INT,notes TEXT,completed INT);
+CREATE TABLE family_members(family_id INT UNSIGNED,user_id INT UNSIGNED,member_role VARCHAR(20));

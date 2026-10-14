@@ -2,6 +2,8 @@
 require_once 'session.php';
 require_once 'recipe_importer.php';
 require_once 'recipe_images.php';
+require_once 'nutrition_store.php';
+require_once 'nutrition_estimator.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['success' => false, 'message' => 'POST requests only.'], 405);
@@ -103,6 +105,7 @@ if (!$tokenRow || (int)$tokenRow['is_active'] !== 1) {
     json_response(['success' => false, 'message' => 'FitFuel import key is invalid or revoked.'], 401);
 }
 $uid = (int)$tokenRow['user_id'];
+ff_ensure_schema($conn);
 $tokenId = (int)$tokenRow['id'];
 
 $sharedUrl = trim((string)($in['url'] ?? $in['recipe_url'] ?? ''));
@@ -186,6 +189,10 @@ $pro = isset($nutritionFromText['protein_per_serving']) ? $nutritionFromText['pr
 $carbs = isset($nutritionFromText['carbs_per_serving']) ? $nutritionFromText['carbs_per_serving'] : (float)($in['carbs_per_serving'] ?? 0);
 $fat = isset($nutritionFromText['fat_per_serving']) ? $nutritionFromText['fat_per_serving'] : (float)($in['fat_per_serving'] ?? 0);
 $fiber = isset($nutritionFromText['fiber_per_serving']) ? $nutritionFromText['fiber_per_serving'] : (float)($in['fiber_per_serving'] ?? 0);
+// Preserve explicit caption nutrition; estimate only when calories are absent.
+$nutritionInput=array_merge($in,['ingredients'=>$ingredients,'servings'=>$servings,'calories_per_serving'=>$cal,'protein_per_serving'=>$pro,'carbs_per_serving'=>$carbs,'fat_per_serving'=>$fat,'fiber_per_serving'=>$fiber]);
+$enriched=ff_enrich_recipe($nutritionInput);
+$cal=$enriched['calories_per_serving'];$pro=$enriched['protein_per_serving'];$carbs=$enriched['carbs_per_serving'];$fat=$enriched['fat_per_serving'];$fiber=$enriched['fiber_per_serving'];
 $fav = (int)($in['is_favorite'] ?? 0) ? 1 : 0;
 
 $st = $conn->prepare("INSERT INTO recipes(user_id,recipe_name,description,source_url,image_url,source_type,ingredients,instructions,servings,prep_time_minutes,cook_time_minutes,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,is_favorite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -196,6 +203,8 @@ if (!$st->execute()) {
 }
 $recipeId = (int)$conn->insert_id;
 $st->close();
+$status=$enriched['nutrition_status']??'provided';if(!in_array($status,['provided','estimated','incomplete'],true))$status='incomplete';$nutritionNotes=$enriched['nutrition_notes']??'';$category=$in['meal_category']??'any';if(!in_array($category,['any','breakfast','lunch','dinner','snack'],true))$category='any';
+$st=$conn->prepare('UPDATE recipes SET nutrition_status=?,nutrition_notes=?,meal_category=? WHERE id=? AND user_id=?');$st->bind_param('sssii',$status,$nutritionNotes,$category,$recipeId,$uid);$st->execute();$st->close();
 
 $st = $conn->prepare("UPDATE shortcut_import_tokens SET last_used_at=NOW() WHERE id=?");
 $st->bind_param('i', $tokenId);
@@ -206,6 +215,8 @@ json_response([
     'success' => true,
     'message' => $name . ' was added to FitFuel.',
     'recipe_id' => $recipeId,
-    'recipe_name' => $name
+    'recipe_name' => $name,
+    'nutrition_status'=>$status,
+    'nutrition_notes'=>$nutritionNotes
 ]);
 ?>
