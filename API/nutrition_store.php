@@ -2,7 +2,7 @@
 require_once 'nutrition_core.php';
 function ff_ensure_schema(mysqli $c): void {
     $c->query("CREATE TABLE IF NOT EXISTS nutrition_settings (user_id INT UNSIGNED PRIMARY KEY, settings_json TEXT NOT NULL) ENGINE=InnoDB");
-    $columns=['meal_plans'=>['portion_servings'=>'DECIMAL(6,2) NOT NULL DEFAULT 1','meal_type'=>"VARCHAR(20) NOT NULL DEFAULT 'lunch'",'logged_food_id'=>'INT UNSIGNED NULL'], 'recipes'=>['meal_category'=>"VARCHAR(20) NOT NULL DEFAULT 'any'",'nutrition_status'=>"VARCHAR(20) NOT NULL DEFAULT 'provided'",'nutrition_notes'=>'TEXT NULL','starter_key'=>'VARCHAR(80) NULL','total_cooked_weight_g'=>'DECIMAL(8,1) NULL','meal_types'=>'VARCHAR(64) NULL']];
+    $columns=['meal_plans'=>['portion_servings'=>'DECIMAL(6,2) NOT NULL DEFAULT 1','meal_type'=>"VARCHAR(20) NOT NULL DEFAULT 'lunch'",'logged_food_id'=>'INT UNSIGNED NULL'], 'recipes'=>['meal_category'=>"VARCHAR(20) NOT NULL DEFAULT 'any'",'nutrition_status'=>"VARCHAR(20) NOT NULL DEFAULT 'provided'",'nutrition_notes'=>'TEXT NULL','starter_key'=>'VARCHAR(80) NULL','total_cooked_weight_g'=>'DECIMAL(8,1) NULL','meal_types'=>'VARCHAR(64) NULL','hidden_at'=>'DATETIME NULL']];
     foreach($columns as $table=>$fields){$existing=[];$res=$c->query("SHOW COLUMNS FROM `$table`");while($row=$res->fetch_assoc())$existing[]=$row['Field'];foreach($fields as $field=>$ddl)if(!in_array($field,$existing,true)){try{$c->query("ALTER TABLE `$table` ADD COLUMN `$field` $ddl");}catch(mysqli_sql_exception $e){if($e->getCode()!==1060)throw $e;}}}
     // Family Menu: one cooked meal per family slot, one portion row per member. Additive only; no foreign keys so
     // a type mismatch on an older live table can never block page loads. Membership is enforced in family_planner.php.
@@ -19,7 +19,7 @@ function ff_ensure_schema(mysqli $c): void {
 // Run-once data fixes. Each claims its name first, so it never re-applies after a user edits the same rows later.
 function ff_data_migrations(mysqli $c): void {
     $done=array_column($c->query('SELECT name FROM ff_migrations')->fetch_all(MYSQLI_ASSOC),'name');
-    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos'] as $name=>$fn){
+    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2','remove-recipes-v1'=>'ff_migrate_remove_recipes','stock-photos-v1'=>'ff_migrate_stock_photos'] as $name=>$fn){
         if(in_array($name,$done,true))continue;$c->begin_transaction();
         try{$st=$c->prepare('INSERT IGNORE INTO ff_migrations(name) VALUES(?)');$st->bind_param('s',$name);$st->execute();$claimed=$st->affected_rows===1;$st->close();if($claimed)$fn($c);$c->commit();}
         catch(Throwable $e){$c->rollback();error_log('FitFuel migration '.$name.': '.$e->getMessage());}
@@ -55,6 +55,79 @@ function ff_import_meal_types(): array {
 function ff_migrate_recipe_photos(mysqli $c): void {
     $st=$c->prepare("UPDATE recipes SET image_url=? WHERE user_id IS NOT NULL AND recipe_name=? AND calories_per_serving BETWEEN ? AND ? AND (image_url IS NULL OR image_url='' OR image_url NOT LIKE '%/assets/recipes/%')");
     foreach([['Creamy Chicken Alfredo Fried Rice','creamy-chicken-alfredo-fried-rice.jpg',572,574]] as [$name,$file,$lo,$hi]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$st->bind_param('ssdd',$url,$name,$lo,$hi);$st->execute();}$st->close();
+}
+
+/** Committed source photos for saved imports, keyed by recipe name and a unique piece of the source URL. */
+function ff_source_photo_fixes(): array {
+    return [
+        ['Bacon, Egg, Cheese & Chives Egg Bites','/DTsy2FtkcoH','bacon-egg-cheese-chives-egg-bites.jpg'],
+        ['Baconator Bowls','/Dc806rwtgG3','baconator-bowls.jpg'],
+        ['Buffalo Chicken Dip','allrecipes.com/recipe/68461/','buffalo-chicken-dip.jpg'],
+        ['Chicken Shawarma Wraps','/DcB7O3whrEi','chicken-shawarma-wraps.jpg'],
+        ['Creamy Cajun Chicken Pasta','/DeiAxyxPvDU','creamy-cajun-chicken-pasta.jpg'],
+        ['Crispy Hot Honey Chicken Alfredo','/DZ5OPgNRGK6','crispy-hot-honey-chicken-alfredo.jpg'],
+        ['Garlic Butter Chicken & Creamy Potatoes','/DZNlssHiqVc','garlic-butter-chicken-creamy-potatoes.jpg'],
+        ['Greek Beef Wraps with Roasted Garlic Feta Sauce & Hot Honey','/DcUW46zIuTH','greek-beef-wraps-feta-hot-honey.jpg'],
+        ['High Protein Buffalo Chicken Potato Bowls','/DN--B8LDK4b','buffalo-chicken-potato-bowls.jpg'],
+        ['High Protein Grilled Chicken Alfredo Pasta','/DE8HSkcsMDx','grilled-chicken-alfredo-pasta.jpg'],
+        ['High Protein Honey BBQ Chicken & Garlic Parmesan Potatoes','/DHlxKYHNSjt','honey-bbq-chicken-garlic-parmesan-potatoes.jpg'],
+        ['High Protein Lemon Garlic Chicken & Crispy Potatoes','/DEsCsfwsZMq','lemon-garlic-chicken-crispy-potatoes.jpg'],
+        ['High-Protein Chicken & Sweet Potato Power Bowl','/DdFF9bTzEb8','chicken-sweet-potato-power-bowl.jpg'],
+        ['Hot Honey Ribs','howtobbqright.com/2025/02/06/hot-honey-ribs','hot-honey-ribs.jpg'],
+        ['Mexican Street Corn Recipe','lilluna.com/mexican-street-corn','mexican-street-corn.jpg'],
+        ['Quick and Easy Buffalo Chicken Dip','allrecipes.com/recipe/266408/','quick-buffalo-chicken-dip.jpg'],
+        ['Shredded Chipotle Beef','/DdfBzT4EmrF','shredded-chipotle-beef.jpg'],
+        ['Street Corn Chicken Bowls','/Dc6V36LqGnV','street-corn-chicken-bowls.jpg'],
+        ['High-Protein Pizza Bites','/DdtucebzoR6','high-protein-pizza-bites.jpg'],
+    ];
+}
+
+function ff_migrate_recipe_photos_v2(mysqli $c): void {
+    // The pizza bites import saved part of the AI reply as its name; the reel caption says "HIGH-PROTEIN PIZZA BITES".
+    $c->query("UPDATE recipes SET recipe_name='High-Protein Pizza Bites' WHERE user_id IS NOT NULL AND source_url LIKE '%/DdtucebzoR6%' AND recipe_name LIKE 'The reel text includes the nutrition information%'");
+    $st=$c->prepare("UPDATE recipes SET image_url=? WHERE user_id IS NOT NULL AND recipe_name=? AND source_url LIKE ? AND (image_url IS NULL OR image_url='' OR (image_url LIKE 'http%' AND image_url NOT LIKE 'https://fitfuel.bylerfinancial.com/%'))");
+    foreach(ff_source_photo_fixes() as [$name,$key,$file]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$like='%'.$key.'%';$st->bind_param('sss',$url,$name,$like);$st->execute();}
+    $st->close();
+}
+
+/** Recipes Christopher asked to remove (shrimp, tuna, or tofu), by exact name. */
+function ff_removed_recipe_names(): array {return ['Shrimp Rice Skillet','Tuna Yogurt Wraps','Tuna Toast Snack Plates','Tofu Black Bean Quinoa Bowls'];}
+
+// Soft-hide the recipes (rows stay, so food log history keeps its recipe link) and drop every planner and
+// Family Menu entry that points at them, so no plan shows or swaps to a hidden recipe. Food logs are kept.
+function ff_migrate_remove_recipes(mysqli $c): void {
+    $names=ff_removed_recipe_names();$in=implode(',',array_fill(0,count($names),'?'));$types=str_repeat('s',count($names));
+    $st=$c->prepare("UPDATE recipes SET hidden_at=NOW() WHERE hidden_at IS NULL AND recipe_name IN ($in)");$st->bind_param($types,...$names);$st->execute();$st->close();
+    $c->query('DELETE p FROM family_meal_portions p JOIN family_meal_plans m ON m.id=p.family_meal_id JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');
+    $c->query('DELETE m FROM family_meal_plans m JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');
+    $c->query('DELETE mp FROM meal_plans mp JOIN recipes r ON r.id=mp.recipe_id WHERE r.hidden_at IS NOT NULL');
+}
+
+/** Free-license photos (credits in assets/recipes/CREDITS.md) for the shared recipes from FitFuel_database_upgrade.sql. */
+function ff_stock_photo_recipes(): array {
+    return [
+        ['Chicken Caesar Protein Wrap','chicken-caesar-protein-wrap.jpg'],
+        ['Chicken Fajita Bowl','chicken-fajita-bowl.jpg'],
+        ['Cottage Cheese Berry Bowl','cottage-cheese-berry-bowl.jpg'],
+        ['Egg & Turkey Breakfast Bowl','egg-turkey-breakfast-bowl.jpg'],
+        ['Greek Yogurt Protein Bowl','greek-yogurt-protein-bowl.jpg'],
+        ['High-Protein Chicken Pasta','high-protein-chicken-pasta.jpg'],
+        ['Lean Beef Taco Bowl','lean-beef-taco-bowl.jpg'],
+        ['Overnight Protein Oats','overnight-protein-oats.jpg'],
+        ['Protein Shake','protein-shake.jpg'],
+        ['Turkey Chili','turkey-chili.jpg'],
+    ];
+}
+
+// Starters take image_url from starter-recipes.json by starter_key; the older shared recipes match by exact name with
+// no source link. Only empty photos are filled, so anything set by hand stays.
+function ff_migrate_stock_photos(mysqli $c): void {
+    $st=$c->prepare("UPDATE recipes SET image_url=? WHERE starter_key=? AND (image_url IS NULL OR image_url='')");
+    foreach(json_decode(file_get_contents(__DIR__.'/../starter-recipes.json'),true,512,JSON_THROW_ON_ERROR) as $r){if(empty($r['image_url']))continue;$url=$r['image_url'];$key=$r['starter_key'];$st->bind_param('ss',$url,$key);$st->execute();}
+    $st->close();
+    $st=$c->prepare("UPDATE recipes SET image_url=? WHERE starter_key IS NULL AND recipe_name=? AND (source_url IS NULL OR source_url='') AND (image_url IS NULL OR image_url='')");
+    foreach(ff_stock_photo_recipes() as [$name,$file]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$st->bind_param('ss',$url,$name);$st->execute();}
+    $st->close();
 }
 function ff_profile(mysqli $c,int $uid): array {
     $st=$c->prepare('SELECT * FROM user_profiles WHERE user_id=?');$st->bind_param('i',$uid);$st->execute();$p=$st->get_result()->fetch_assoc()?:[];$st->close();

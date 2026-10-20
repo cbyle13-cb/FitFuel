@@ -52,7 +52,7 @@ with tempfile.TemporaryDirectory(prefix='fitfuel-types-') as td:
   recipes=lambda u=1:call('api.php?action=recipes',uid=u)['recipes']
   one=lambda name,u=1,img=None:next(r for r in recipes(u) if r['recipe_name']==name and (img is None or r['image_url']==img))
   call('api.php?action=recipes');call('api.php?action=recipes',uid=2)
-  assert scalar("SELECT COUNT(*) FROM ff_migrations")=='2'
+  assert scalar("SELECT COUNT(*) FROM ff_migrations WHERE name IN ('meal-types-v1','recipe-photos-v1')")=='2'
   assert one('Sweet Potato Beef Taco Boats')['meal_types']=='lunch,dinner' and one('Sweet Potato Beef Taco Boats')['meal_category']=='lunch'
   assert one('High Protein Beef Queso Game Day Dip')['meal_types']=='snack' and one('High Protein Inspired McGriddles')['meal_types']=='breakfast' and one('Steak Chimichurri & Mashed Sweet Potato Bowl')['meal_types']=='dinner,lunch'
   assert scalar("SELECT COALESCE(meal_types,'NULL') FROM recipes WHERE user_id=3")=='NULL' and scalar("SELECT meal_category FROM recipes WHERE user_id=3")=='any'

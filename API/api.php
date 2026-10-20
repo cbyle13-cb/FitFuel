@@ -6,8 +6,8 @@ $uid=require_login();$method=$_SERVER['REQUEST_METHOD'];
 ensure_recipe_image_column($conn);
 ff_ensure_schema($conn);
 function inp(){ $x=json_decode(file_get_contents('php://input'),true);return is_array($x)?$x:[]; }
-function recipeRow($c,$id){$st=$c->prepare("SELECT * FROM recipes WHERE id=? LIMIT 1");$st->bind_param("i",$id);$st->execute();$r=$st->get_result()->fetch_assoc();$st->close();return$r?:null;}
-function recipesFor($c,$uid){$fid=family_id_for_user($c,$uid);if($fid){$st=$c->prepare("SELECT r.* FROM recipes r LEFT JOIN family_members fm ON fm.user_id=r.user_id AND fm.family_id=? WHERE r.user_id IS NULL OR fm.family_id=? ORDER BY r.recipe_name");$st->bind_param("ii",$fid,$fid);}else{$st=$c->prepare("SELECT * FROM recipes WHERE user_id IS NULL OR user_id=? ORDER BY recipe_name");$st->bind_param("i",$uid);}$st->execute();$a=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();foreach($a as&$r)$r['ingredients']=json_decode($r['ingredients']??'[]',true)?:preg_split('/\r\n|\r|\n/',$r['ingredients']??'',-1,PREG_SPLIT_NO_EMPTY);return$a;}
+function recipeRow($c,$id){$st=$c->prepare("SELECT * FROM recipes WHERE id=? AND hidden_at IS NULL LIMIT 1");$st->bind_param("i",$id);$st->execute();$r=$st->get_result()->fetch_assoc();$st->close();return$r?:null;}
+function recipesFor($c,$uid){$fid=family_id_for_user($c,$uid);if($fid){$st=$c->prepare("SELECT r.* FROM recipes r LEFT JOIN family_members fm ON fm.user_id=r.user_id AND fm.family_id=? WHERE r.hidden_at IS NULL AND (r.user_id IS NULL OR fm.family_id=?) ORDER BY r.recipe_name");$st->bind_param("ii",$fid,$fid);}else{$st=$c->prepare("SELECT * FROM recipes WHERE hidden_at IS NULL AND (user_id IS NULL OR user_id=?) ORDER BY recipe_name");$st->bind_param("i",$uid);}$st->execute();$a=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();foreach($a as&$r)$r['ingredients']=json_decode($r['ingredients']??'[]',true)?:preg_split('/\r\n|\r|\n/',$r['ingredients']??'',-1,PREG_SPLIT_NO_EMPTY);return$a;}
 if($method==='GET'){
 $action=$_GET['action']??'bootstrap';
 if($action==='dashboard'){
