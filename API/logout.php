@@ -21,8 +21,9 @@ function current_user(mysqli $conn,int $uid): array {
     return $u;
 }
 function family_id_for_user(mysqli $conn,int $uid): ?int {
-    $st=$conn->prepare("SELECT family_id FROM family_members WHERE user_id=? LIMIT 1");
-    $st->bind_param("i",$uid);$st->execute();$r=$st->get_result()->fetch_assoc();$st->close();
+    // Deterministic: a family the user joined wins over the solo family created at sign-up; ties go to the oldest family.
+    $st=$conn->prepare("SELECT fm.family_id FROM family_members fm LEFT JOIN families f ON f.id=fm.family_id WHERE fm.user_id=? ORDER BY (f.created_by<=>?) ASC,fm.family_id ASC LIMIT 1");
+    $st->bind_param("ii",$uid,$uid);$st->execute();$r=$st->get_result()->fetch_assoc();$st->close();
     return $r?(int)$r['family_id']:null;
 }
 ?>

@@ -13,4 +13,5 @@ CREATE TABLE progress_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id IN
 INSERT INTO progress_logs(user_id,log_date,weight) VALUES(1,'2026-10-10',223);
 CREATE TABLE water_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,log_date DATE,ounces DECIMAL(7,2));
 CREATE TABLE workout_logs(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED,workout_date DATE,workout_name VARCHAR(255),duration_minutes INT,notes TEXT,completed INT);
-CREATE TABLE family_members(family_id INT UNSIGNED,user_id INT UNSIGNED,member_role VARCHAR(20));
+CREATE TABLE families(id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,name VARCHAR(150) NOT NULL,invite_code VARCHAR(20) NOT NULL UNIQUE,created_by INT UNSIGNED NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE family_members(family_id INT UNSIGNED NOT NULL,user_id INT UNSIGNED NOT NULL,member_role ENUM('owner','member') NOT NULL DEFAULT 'member',joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(family_id,user_id),KEY idx_family_members_user(user_id));
