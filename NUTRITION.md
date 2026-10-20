@@ -59,4 +59,4 @@ Each recipe has one or more meal types (breakfast, lunch, dinner, snack) stored 
 
 ## Removed recipes
 
-`remove-shrimp-tuna-v1` (run once) soft-hides Shrimp Rice Skillet, Tuna Yogurt Wraps, and Tuna Toast Snack Plates (`recipes.hidden_at`; names in `ff_removed_recipe_names()`), and deletes the planner and Family Menu entries that used them. Food logs are kept. Hidden recipes never appear in recipe lists, plan generation, swaps, or edits. They were also removed from `starter-recipes.json`, so new installs never seed them. To bring one back, set its `hidden_at` to NULL.
+`remove-recipes-v1` (run once) soft-hides Shrimp Rice Skillet, Tuna Yogurt Wraps, Tuna Toast Snack Plates, and Tofu Black Bean Quinoa Bowls (`recipes.hidden_at`; names in `ff_removed_recipe_names()`), and deletes the planner and Family Menu entries that used them. Food logs are kept. Hidden recipes never appear in recipe lists, plan generation, swaps, or edits. They were also removed from `starter-recipes.json`, so new installs never seed them. To bring one back, set its `hidden_at` to NULL.

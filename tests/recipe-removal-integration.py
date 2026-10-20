@@ -1,4 +1,4 @@
-"""Shrimp and tuna removal (remove-shrimp-tuna-v1) against isolated temporary MariaDB data; never touch production."""
+"""Shrimp, tuna, and tofu removal (remove-recipes-v1) against isolated temporary MariaDB data; never touch production."""
 import json, os, shlex, shutil, socket, subprocess, tempfile, time, urllib.request, urllib.error
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -47,34 +47,36 @@ with tempfile.TemporaryDirectory(prefix='fitfuel-removal-') as td:
   sql("INSERT INTO families(id,name,invite_code,created_by) VALUES(1,'Byler','FFAAAA1111',1);INSERT INTO family_members(family_id,user_id,member_role) VALUES(1,1,'owner'),(1,2,'member');")
   call('api.php?action=recipes')  # creates the schema and runs every migration once
   # Simulate the live database: the three starters seeded from the old starter-recipes.json, plus plans that use them.
-  sql("DELETE FROM ff_migrations WHERE name='remove-shrimp-tuna-v1';"
+  sql("DELETE FROM ff_migrations WHERE name='remove-recipes-v1';"
       "INSERT INTO recipes(user_id,recipe_name,starter_key,ingredients,instructions,servings,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,meal_category) VALUES"
       "(NULL,'Shrimp Rice Skillet','ff-protein-v1-shrimp','[\"1000 g shrimp\"]','Cook.',5,450,40,50,8,3,'dinner'),"
       "(NULL,'Tuna Yogurt Wraps','ff-protein-v1-tuna','[\"600 g tuna\"]','Wrap.',4,380,42,35,7,4,'lunch'),"
       "(NULL,'Tuna Toast Snack Plates','ff-protein-v1-tuna-snack','[\"500 g tuna\"]','Toast.',4,250,30,20,4,3,'snack'),"
+      "(NULL,'Tofu Black Bean Quinoa Bowls','ff-protein-v1-tofu','[\"800 g firm tofu\"]','Roast.',4,420,30,45,12,10,'lunch'),"
       "(1,'Tuna Melt Sandwich',NULL,'[\"tuna\"]','Melt.',2,400,35,30,15,2,'lunch');")
   rid=lambda n:int(scalar(f"SELECT id FROM recipes WHERE recipe_name='{n}'"))
-  shrimp,tuna,snack,melt=rid('Shrimp Rice Skillet'),rid('Tuna Yogurt Wraps'),rid('Tuna Toast Snack Plates'),rid('Tuna Melt Sandwich')
+  shrimp,tuna,snack,melt=rid('Shrimp Rice Skillet'),rid('Tuna Yogurt Wraps'),rid('Tuna Toast Snack Plates'),rid('Tuna Melt Sandwich');tofu=rid('Tofu Black Bean Quinoa Bowls')
   salmon=rid('Salmon Quinoa and Broccoli')
   sql(f"INSERT INTO food_logs(user_id,food_date,meal_type,food_name,servings,calories,protein_g,carbs_g,fat_g,fiber_g,recipe_id) VALUES(1,'2026-10-12','lunch','Tuna Yogurt Wraps',1,380,42,35,7,4,{tuna});"
-      f"INSERT INTO meal_plans(user_id,plan_date,recipe_id,meal_order,meal_type) VALUES(1,'2026-10-12',{tuna},1,'lunch'),(1,'2026-10-21',{shrimp},2,'dinner'),(1,'2026-10-21',{salmon},3,'dinner');"
-      f"INSERT INTO family_meal_plans(id,family_id,plan_date,meal_type,meal_order,recipe_id) VALUES(901,1,'2026-10-21','snack',1,{snack}),(902,1,'2026-10-21','dinner',1,{salmon});"
-      "INSERT INTO family_meal_portions(family_meal_id,user_id,portion_servings) VALUES(901,1,1),(901,2,1),(902,1,1);")
+      f"INSERT INTO meal_plans(user_id,plan_date,recipe_id,meal_order,meal_type) VALUES(1,'2026-10-12',{tuna},1,'lunch'),(1,'2026-10-21',{shrimp},2,'dinner'),(1,'2026-10-21',{salmon},3,'dinner'),(1,'2026-10-22',{tofu},1,'lunch');"
+      f"INSERT INTO family_meal_plans(id,family_id,plan_date,meal_type,meal_order,recipe_id) VALUES(901,1,'2026-10-21','snack',1,{snack}),(902,1,'2026-10-21','dinner',1,{salmon}),(903,1,'2026-10-22','lunch',1,{tofu});"
+      "INSERT INTO family_meal_portions(family_meal_id,user_id,portion_servings) VALUES(901,1,1),(901,2,1),(902,1,1),(903,2,1);")
   names={r['recipe_name'] for r in call('api.php?action=recipes')['recipes']}
-  assert not names & {'Shrimp Rice Skillet','Tuna Yogurt Wraps','Tuna Toast Snack Plates'},names
+  assert not names & {'Shrimp Rice Skillet','Tuna Yogurt Wraps','Tuna Toast Snack Plates','Tofu Black Bean Quinoa Bowls'},names
   assert 'Salmon Quinoa and Broccoli' in names and 'Tuna Melt Sandwich' in names
-  assert scalar(f"SELECT COUNT(*) FROM recipes WHERE id IN ({shrimp},{tuna},{snack}) AND hidden_at IS NOT NULL")=='3'  # soft-hidden, not deleted
-  assert scalar(f"SELECT COUNT(*) FROM meal_plans WHERE recipe_id IN ({shrimp},{tuna},{snack})")=='0' and scalar(f"SELECT COUNT(*) FROM meal_plans WHERE recipe_id={salmon}")=='1'
-  assert scalar("SELECT COUNT(*) FROM family_meal_plans WHERE id=901")=='0' and scalar("SELECT COUNT(*) FROM family_meal_portions WHERE family_meal_id=901")=='0'
+  assert scalar(f"SELECT COUNT(*) FROM recipes WHERE id IN ({shrimp},{tuna},{snack},{tofu}) AND hidden_at IS NOT NULL")=='4'  # soft-hidden, not deleted
+  assert scalar(f"SELECT COUNT(*) FROM meal_plans WHERE recipe_id IN ({shrimp},{tuna},{snack},{tofu})")=='0' and scalar(f"SELECT COUNT(*) FROM meal_plans WHERE recipe_id={salmon}")=='1'
+  assert scalar("SELECT COUNT(*) FROM family_meal_plans WHERE id IN (901,903)")=='0' and scalar("SELECT COUNT(*) FROM family_meal_portions WHERE family_meal_id=903")=='0'
+  assert scalar("SELECT COUNT(*) FROM family_meal_portions WHERE family_meal_id=901")=='0'
   assert scalar("SELECT COUNT(*) FROM family_meal_plans WHERE id=902")=='1' and scalar("SELECT COUNT(*) FROM family_meal_portions WHERE family_meal_id=902")=='1'
   assert scalar(f"SELECT COUNT(*) FROM food_logs WHERE recipe_id={tuna}")=='1'  # history kept
   # Hidden recipes can't come back through edits, swaps, or the Family Menu.
   call(body={'action':'recipe_meal_types_save','id':tuna,'meal_types':['lunch']},status=404)
   fam=call('family_planner.php?action=family_week&start=2026-10-19')
-  assert all(m['recipe']['id'] not in (shrimp,tuna,snack) for day in (fam.get('week') or {}).values() for m in day)
+  assert all(m['recipe']['id'] not in (shrimp,tuna,snack,tofu) for day in (fam.get('week') or {}).values() for m in day)
   call('api.php?action=recipes')
-  assert scalar("SELECT COUNT(*) FROM ff_migrations WHERE name='remove-shrimp-tuna-v1'")=='1' and scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL")=='18'
-  print('Recipe removal integration: shrimp and tuna recipes soft-hidden, plan references removed, salmon and history kept.')
+  assert scalar("SELECT COUNT(*) FROM ff_migrations WHERE name='remove-recipes-v1'")=='1' and scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL")=='18'
+  print('Recipe removal integration: shrimp, tuna, and tofu recipes soft-hidden, plan references removed, salmon and history kept.')
  except Exception:
   print((base/'db.log').read_text()[-2000:]);print((base/'php.log').read_text()[-3000:]);raise
  finally:

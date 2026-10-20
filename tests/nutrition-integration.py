@@ -42,8 +42,8 @@ with tempfile.TemporaryDirectory(prefix='fitfuel-nutrition-') as td:
    try:return json.loads(raw)
    except ValueError:raise AssertionError(raw)
   def scalar(sql):return php(f"$c=new mysqli('127.0.0.1','root','','fitfuel_test',{dbport});echo $c->query("+json.dumps(sql)+")->fetch_row()[0];")
-  boot=call('api.php?action=bootstrap&date=2026-10-14&plan_start=2026-10-11');assert len([r for r in boot['recipes'] if r['starter_key']])==15
-  call('api.php?action=bootstrap');assert scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL")=='15'
+  boot=call('api.php?action=bootstrap&date=2026-10-14&plan_start=2026-10-11');assert len([r for r in boot['recipes'] if r['starter_key']])==14
+  call('api.php?action=bootstrap');assert scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL")=='14'
   assert scalar('SELECT COUNT(*) FROM food_logs')=='1';assert scalar('SELECT COUNT(*) FROM progress_logs')=='1';assert scalar('SELECT portion_servings FROM meal_plans WHERE id=1')=='1.00'
   profile={'sex':'male','date_of_birth':'1977-02-01','height_inches':70,'current_weight':223,'goal_weight':185,'planner_activity':'moderate','planner_goal':'fat_loss','meals_per_day':4,'excluded_foods':'shrimp','daily_water_goal':96,'auto_targets':True}
   saved=call('profile.php',profile)['profile'];assert saved['daily_water_goal']==96;assert saved['sex']=='male';initial=float(saved['daily_calorie_goal'])

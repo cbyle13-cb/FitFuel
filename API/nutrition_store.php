@@ -19,7 +19,7 @@ function ff_ensure_schema(mysqli $c): void {
 // Run-once data fixes. Each claims its name first, so it never re-applies after a user edits the same rows later.
 function ff_data_migrations(mysqli $c): void {
     $done=array_column($c->query('SELECT name FROM ff_migrations')->fetch_all(MYSQLI_ASSOC),'name');
-    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2','remove-shrimp-tuna-v1'=>'ff_migrate_remove_shrimp_tuna','stock-photos-v1'=>'ff_migrate_stock_photos'] as $name=>$fn){
+    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2','remove-recipes-v1'=>'ff_migrate_remove_recipes','stock-photos-v1'=>'ff_migrate_stock_photos'] as $name=>$fn){
         if(in_array($name,$done,true))continue;$c->begin_transaction();
         try{$st=$c->prepare('INSERT IGNORE INTO ff_migrations(name) VALUES(?)');$st->bind_param('s',$name);$st->execute();$claimed=$st->affected_rows===1;$st->close();if($claimed)$fn($c);$c->commit();}
         catch(Throwable $e){$c->rollback();error_log('FitFuel migration '.$name.': '.$e->getMessage());}
@@ -90,12 +90,12 @@ function ff_migrate_recipe_photos_v2(mysqli $c): void {
     $st->close();
 }
 
-/** Recipes Christopher asked to remove (shrimp or tuna as the main protein), by exact name. */
-function ff_removed_recipe_names(): array {return ['Shrimp Rice Skillet','Tuna Yogurt Wraps','Tuna Toast Snack Plates'];}
+/** Recipes Christopher asked to remove (shrimp, tuna, or tofu), by exact name. */
+function ff_removed_recipe_names(): array {return ['Shrimp Rice Skillet','Tuna Yogurt Wraps','Tuna Toast Snack Plates','Tofu Black Bean Quinoa Bowls'];}
 
 // Soft-hide the recipes (rows stay, so food log history keeps its recipe link) and drop every planner and
 // Family Menu entry that points at them, so no plan shows or swaps to a hidden recipe. Food logs are kept.
-function ff_migrate_remove_shrimp_tuna(mysqli $c): void {
+function ff_migrate_remove_recipes(mysqli $c): void {
     $names=ff_removed_recipe_names();$in=implode(',',array_fill(0,count($names),'?'));$types=str_repeat('s',count($names));
     $st=$c->prepare("UPDATE recipes SET hidden_at=NOW() WHERE hidden_at IS NULL AND recipe_name IN ($in)");$st->bind_param($types,...$names);$st->execute();$st->close();
     $c->query('DELETE p FROM family_meal_portions p JOIN family_meal_plans m ON m.id=p.family_meal_id JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');

@@ -30,7 +30,7 @@ These photos are from Wikimedia Commons and are used under the license listed fo
 | Protein Shake | `protein-shake.jpg` | Sandstein | Wikimedia Commons | [Protein shake.jpg](https://commons.wikimedia.org/wiki/File:Protein_shake.jpg) | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0) |
 | Turkey Chili | `turkey-chili.jpg` | Nolabob | Wikimedia Commons | [Turkey Chili.jpg](https://commons.wikimedia.org/wiki/File:Turkey_Chili.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 
-Recipes still on `placeholder.svg` because no free photo matched well: Tofu Black Bean Quinoa Bowls, Cottage Cheese Apple Bowls, Buffalo Chicken Bowl, Turkey Burger Bowl.
+Recipes still on `placeholder.svg` because no free photo matched well: Cottage Cheese Apple Bowls, Buffalo Chicken Bowl, Turkey Burger Bowl.
 
 ## Photos from each recipe's own source
 

@@ -153,27 +153,6 @@
     "fiber_per_serving": 11.7
   },
   {
-    "starter_key": "ff-protein-v1-tofu",
-    "recipe_name": "Tofu Black Bean Quinoa Bowls",
-    "meal_category": "lunch",
-    "meal_types": ["lunch", "dinner"],
-    "servings": 4,
-    "ingredients": [
-      "800 g firm tofu",
-      "500 g black beans drained",
-      "220 g dry quinoa",
-      "300 g bell pepper",
-      "200 g salsa"
-    ],
-    "instructions": "1. Cook quinoa according to package directions.\n2. Roast cubed tofu and peppers at 400\u00b0F until hot and lightly browned.\n3. Heat beans and divide with quinoa, tofu and salsa into four bowls.",
-    "nutrition_status": "estimated",
-    "calories_per_serving": 693.1,
-    "protein_per_serving": 54.7,
-    "carbs_per_serving": 78.0,
-    "fat_per_serving": 21.6,
-    "fiber_per_serving": 21.8
-  },
-  {
     "starter_key": "ff-protein-v1-chili",
     "recipe_name": "Lean Beef and Bean Chili",
     "meal_category": "dinner",

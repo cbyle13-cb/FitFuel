@@ -75,8 +75,8 @@ with tempfile.TemporaryDirectory(prefix='fitfuel-photos-') as td:
   assert img("recipe_name='Street Corn Chicken Bowl'")=='NULL'
   # Stock photos: starters by starter_key, shared recipes by exact name only when they have no source and no photo.
   assert img("starter_key='ff-protein-v1-oats'")==A+'greek-yogurt-overnight-oats.jpg' and img("starter_key='ff-protein-v1-chili'")==A+'lean-beef-bean-chili.jpg'
-  assert img("starter_key='ff-protein-v1-tofu'")=='NULL' and img("starter_key='ff-protein-v1-cottage-snack'")=='NULL'  # no good match -> placeholder
-  assert scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL AND image_url IS NOT NULL")=='13'
+  assert img("starter_key='ff-protein-v1-cottage-snack'")=='NULL'  # no good match -> placeholder
+  assert scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL AND image_url IS NOT NULL")=='13' and scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL")=='14'
   assert img("recipe_name='Protein Shake'")==A+'protein-shake.jpg' and img("recipe_name='Cottage Cheese Berry Bowl'")==A+'cottage-cheese-berry-bowl.jpg'
   assert img("recipe_name='Turkey Chili'")=='https://example.com/my-chili.jpg' and img("recipe_name='Lean Beef Taco Bowl'")=='NULL'
   # Run once: a later change by the user is not overwritten.
