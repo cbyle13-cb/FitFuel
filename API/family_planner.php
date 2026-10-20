@@ -6,7 +6,7 @@ $uid=require_login();ensure_recipe_image_column($conn);ff_ensure_schema($conn);
 $fid=family_id_for_user($conn,$uid);
 if(!$fid)json_response(['success'=>false,'message'=>'Join or create a family first.'],403);
 function fm_recipes(mysqli $c,int $fid): array {
-    $st=$c->prepare("SELECT r.* FROM recipes r LEFT JOIN family_members fm ON fm.user_id=r.user_id AND fm.family_id=? WHERE r.user_id IS NULL OR fm.family_id=? ORDER BY r.recipe_name");$st->bind_param('ii',$fid,$fid);$st->execute();$a=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();
+    $st=$c->prepare("SELECT r.* FROM recipes r LEFT JOIN family_members fm ON fm.user_id=r.user_id AND fm.family_id=? WHERE r.hidden_at IS NULL AND (r.user_id IS NULL OR fm.family_id=?) ORDER BY r.recipe_name");$st->bind_param('ii',$fid,$fid);$st->execute();$a=$st->get_result()->fetch_all(MYSQLI_ASSOC);$st->close();
     $out=[];foreach($a as $r){$r['ingredients']=json_decode($r['ingredients']??'[]',true)?:preg_split('/\r\n|\r|\n/',$r['ingredients']??'',-1,PREG_SPLIT_NO_EMPTY);$out[(int)$r['id']]=$r;}return $out;
 }
 // Profiles stay server-side: responses only carry names and portions, never another member's weight or targets.

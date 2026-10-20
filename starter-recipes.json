@@ -125,27 +125,6 @@
     "fiber_per_serving": 12.1
   },
   {
-    "starter_key": "ff-protein-v1-tuna",
-    "recipe_name": "Tuna Yogurt Wraps",
-    "meal_category": "lunch",
-    "meal_types": ["lunch"],
-    "servings": 4,
-    "ingredients": [
-      "600 g canned tuna drained",
-      "300 g nonfat greek yogurt",
-      "240 g whole wheat tortilla",
-      "200 g carrot",
-      "100 g spinach"
-    ],
-    "instructions": "1. Stir drained tuna with yogurt and grated carrot.\n2. Divide over four tortillas with spinach.\n3. Wrap just before eating; refrigerate filling separately.",
-    "nutrition_status": "estimated",
-    "calories_per_serving": 430.5,
-    "protein_per_serving": 53.0,
-    "carbs_per_serving": 39.6,
-    "fat_per_serving": 6.5,
-    "fiber_per_serving": 6.7
-  },
-  {
     "starter_key": "ff-protein-v1-chicken-potato",
     "recipe_name": "Chicken and Sweet Potato Prep",
     "meal_category": "lunch",
@@ -253,28 +232,6 @@
     "fiber_per_serving": 8.1
   },
   {
-    "starter_key": "ff-protein-v1-shrimp",
-    "recipe_name": "Shrimp Rice Skillet",
-    "meal_category": "dinner",
-    "meal_types": ["dinner"],
-    "servings": 4,
-    "ingredients": [
-      "1000 g shrimp peeled",
-      "300 g dry rice",
-      "400 g bell pepper",
-      "200 g onion",
-      "30 g olive oil",
-      "12 g garlic"
-    ],
-    "instructions": "1. Cook rice according to package directions.\n2. Saut\u00e9 diced pepper, onion and garlic in oil until tender.\n3. Add shrimp and cook to 145\u00b0F, until opaque. Stir in rice and divide into four portions.",
-    "nutrition_status": "estimated",
-    "calories_per_serving": 608.0,
-    "protein_per_serving": 57.1,
-    "carbs_per_serving": 71.6,
-    "fat_per_serving": 9.6,
-    "fiber_per_serving": 4.0
-  },
-  {
     "starter_key": "ff-protein-v1-burger",
     "recipe_name": "Beef Burger Potato Bowls",
     "meal_category": "dinner",
@@ -332,26 +289,6 @@
     "carbs_per_serving": 38.3,
     "fat_per_serving": 14.7,
     "fiber_per_serving": 5.5
-  },
-  {
-    "starter_key": "ff-protein-v1-tuna-snack",
-    "recipe_name": "Tuna Toast Snack Plates",
-    "meal_category": "snack",
-    "meal_types": ["snack", "lunch"],
-    "servings": 4,
-    "ingredients": [
-      "500 g canned tuna drained",
-      "200 g nonfat greek yogurt",
-      "112 g whole wheat bread",
-      "200 g carrot"
-    ],
-    "instructions": "1. Stir tuna and yogurt together.\n2. Divide into four portions with toasted bread and carrot sticks. Store filling separately.",
-    "nutrition_status": "estimated",
-    "calories_per_serving": 264.2,
-    "protein_per_serving": 41.1,
-    "carbs_per_serving": 18.1,
-    "fat_per_serving": 2.5,
-    "fiber_per_serving": 3.4
   },
   {
     "starter_key": "ff-protein-v1-yogurt-smoothie",

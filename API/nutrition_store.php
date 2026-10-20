@@ -2,7 +2,7 @@
 require_once 'nutrition_core.php';
 function ff_ensure_schema(mysqli $c): void {
     $c->query("CREATE TABLE IF NOT EXISTS nutrition_settings (user_id INT UNSIGNED PRIMARY KEY, settings_json TEXT NOT NULL) ENGINE=InnoDB");
-    $columns=['meal_plans'=>['portion_servings'=>'DECIMAL(6,2) NOT NULL DEFAULT 1','meal_type'=>"VARCHAR(20) NOT NULL DEFAULT 'lunch'",'logged_food_id'=>'INT UNSIGNED NULL'], 'recipes'=>['meal_category'=>"VARCHAR(20) NOT NULL DEFAULT 'any'",'nutrition_status'=>"VARCHAR(20) NOT NULL DEFAULT 'provided'",'nutrition_notes'=>'TEXT NULL','starter_key'=>'VARCHAR(80) NULL','total_cooked_weight_g'=>'DECIMAL(8,1) NULL','meal_types'=>'VARCHAR(64) NULL']];
+    $columns=['meal_plans'=>['portion_servings'=>'DECIMAL(6,2) NOT NULL DEFAULT 1','meal_type'=>"VARCHAR(20) NOT NULL DEFAULT 'lunch'",'logged_food_id'=>'INT UNSIGNED NULL'], 'recipes'=>['meal_category'=>"VARCHAR(20) NOT NULL DEFAULT 'any'",'nutrition_status'=>"VARCHAR(20) NOT NULL DEFAULT 'provided'",'nutrition_notes'=>'TEXT NULL','starter_key'=>'VARCHAR(80) NULL','total_cooked_weight_g'=>'DECIMAL(8,1) NULL','meal_types'=>'VARCHAR(64) NULL','hidden_at'=>'DATETIME NULL']];
     foreach($columns as $table=>$fields){$existing=[];$res=$c->query("SHOW COLUMNS FROM `$table`");while($row=$res->fetch_assoc())$existing[]=$row['Field'];foreach($fields as $field=>$ddl)if(!in_array($field,$existing,true)){try{$c->query("ALTER TABLE `$table` ADD COLUMN `$field` $ddl");}catch(mysqli_sql_exception $e){if($e->getCode()!==1060)throw $e;}}}
     // Family Menu: one cooked meal per family slot, one portion row per member. Additive only; no foreign keys so
     // a type mismatch on an older live table can never block page loads. Membership is enforced in family_planner.php.
@@ -19,7 +19,7 @@ function ff_ensure_schema(mysqli $c): void {
 // Run-once data fixes. Each claims its name first, so it never re-applies after a user edits the same rows later.
 function ff_data_migrations(mysqli $c): void {
     $done=array_column($c->query('SELECT name FROM ff_migrations')->fetch_all(MYSQLI_ASSOC),'name');
-    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2'] as $name=>$fn){
+    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2','remove-shrimp-tuna-v1'=>'ff_migrate_remove_shrimp_tuna'] as $name=>$fn){
         if(in_array($name,$done,true))continue;$c->begin_transaction();
         try{$st=$c->prepare('INSERT IGNORE INTO ff_migrations(name) VALUES(?)');$st->bind_param('s',$name);$st->execute();$claimed=$st->affected_rows===1;$st->close();if($claimed)$fn($c);$c->commit();}
         catch(Throwable $e){$c->rollback();error_log('FitFuel migration '.$name.': '.$e->getMessage());}
@@ -88,6 +88,19 @@ function ff_migrate_recipe_photos_v2(mysqli $c): void {
     $st=$c->prepare("UPDATE recipes SET image_url=? WHERE user_id IS NOT NULL AND recipe_name=? AND source_url LIKE ? AND (image_url IS NULL OR image_url='' OR (image_url LIKE 'http%' AND image_url NOT LIKE 'https://fitfuel.bylerfinancial.com/%'))");
     foreach(ff_source_photo_fixes() as [$name,$key,$file]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$like='%'.$key.'%';$st->bind_param('sss',$url,$name,$like);$st->execute();}
     $st->close();
+}
+
+/** Recipes Christopher asked to remove (shrimp or tuna as the main protein), by exact name. */
+function ff_removed_recipe_names(): array {return ['Shrimp Rice Skillet','Tuna Yogurt Wraps','Tuna Toast Snack Plates'];}
+
+// Soft-hide the recipes (rows stay, so food log history keeps its recipe link) and drop every planner and
+// Family Menu entry that points at them, so no plan shows or swaps to a hidden recipe. Food logs are kept.
+function ff_migrate_remove_shrimp_tuna(mysqli $c): void {
+    $names=ff_removed_recipe_names();$in=implode(',',array_fill(0,count($names),'?'));$types=str_repeat('s',count($names));
+    $st=$c->prepare("UPDATE recipes SET hidden_at=NOW() WHERE hidden_at IS NULL AND recipe_name IN ($in)");$st->bind_param($types,...$names);$st->execute();$st->close();
+    $c->query('DELETE p FROM family_meal_portions p JOIN family_meal_plans m ON m.id=p.family_meal_id JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');
+    $c->query('DELETE m FROM family_meal_plans m JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');
+    $c->query('DELETE mp FROM meal_plans mp JOIN recipes r ON r.id=mp.recipe_id WHERE r.hidden_at IS NOT NULL');
 }
 function ff_profile(mysqli $c,int $uid): array {
     $st=$c->prepare('SELECT * FROM user_profiles WHERE user_id=?');$st->bind_param('i',$uid);$st->execute();$p=$st->get_result()->fetch_assoc()?:[];$st->close();

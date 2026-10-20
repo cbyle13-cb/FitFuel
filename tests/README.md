@@ -16,4 +16,5 @@ python3 tests/nutrition-integration.py
 python3 tests/family-integration.py
 python3 tests/meal-types-integration.py
 python3 tests/recipe-photos-integration.py
+python3 tests/recipe-removal-integration.py
 ```
