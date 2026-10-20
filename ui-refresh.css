@@ -110,3 +110,9 @@ body:has(.dashboard-page) nav button.active{background:var(--lime);color:#17152f
 .dashboard-page .quick-card>span{background:#4c4278;color:var(--lime)}
 .dashboard-page .card .section-heading>button:not(.text-button){background:var(--lime);color:#17152f}
 .dashboard-page .water-progress{accent-color:#7dc9df}
+
+/* Recipe meal filter chips: wrap onto a second line on narrow screens so every chip stays visible. */
+.nutrition-page .meal-filter{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+.nutrition-page .meal-filter .meal-chip{flex:0 0 auto;margin:0;border-radius:999px;padding:8px 16px;font-weight:600;white-space:nowrap;min-height:38px}
+.nutrition-page .meal-filter .meal-chip[aria-pressed="true"]{background:var(--brand);color:#fff}
+@media(max-width:600px){.nutrition-page .meal-filter{gap:6px}.nutrition-page .meal-filter .meal-chip{padding:8px 13px;font-size:14px}}
