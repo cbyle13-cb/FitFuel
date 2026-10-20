@@ -19,7 +19,7 @@ function ff_ensure_schema(mysqli $c): void {
 // Run-once data fixes. Each claims its name first, so it never re-applies after a user edits the same rows later.
 function ff_data_migrations(mysqli $c): void {
     $done=array_column($c->query('SELECT name FROM ff_migrations')->fetch_all(MYSQLI_ASSOC),'name');
-    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2','remove-shrimp-tuna-v1'=>'ff_migrate_remove_shrimp_tuna'] as $name=>$fn){
+    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2','remove-shrimp-tuna-v1'=>'ff_migrate_remove_shrimp_tuna','stock-photos-v1'=>'ff_migrate_stock_photos'] as $name=>$fn){
         if(in_array($name,$done,true))continue;$c->begin_transaction();
         try{$st=$c->prepare('INSERT IGNORE INTO ff_migrations(name) VALUES(?)');$st->bind_param('s',$name);$st->execute();$claimed=$st->affected_rows===1;$st->close();if($claimed)$fn($c);$c->commit();}
         catch(Throwable $e){$c->rollback();error_log('FitFuel migration '.$name.': '.$e->getMessage());}
@@ -101,6 +101,33 @@ function ff_migrate_remove_shrimp_tuna(mysqli $c): void {
     $c->query('DELETE p FROM family_meal_portions p JOIN family_meal_plans m ON m.id=p.family_meal_id JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');
     $c->query('DELETE m FROM family_meal_plans m JOIN recipes r ON r.id=m.recipe_id WHERE r.hidden_at IS NOT NULL');
     $c->query('DELETE mp FROM meal_plans mp JOIN recipes r ON r.id=mp.recipe_id WHERE r.hidden_at IS NOT NULL');
+}
+
+/** Free-license photos (credits in assets/recipes/CREDITS.md) for the shared recipes from FitFuel_database_upgrade.sql. */
+function ff_stock_photo_recipes(): array {
+    return [
+        ['Chicken Caesar Protein Wrap','chicken-caesar-protein-wrap.jpg'],
+        ['Chicken Fajita Bowl','chicken-fajita-bowl.jpg'],
+        ['Cottage Cheese Berry Bowl','cottage-cheese-berry-bowl.jpg'],
+        ['Egg & Turkey Breakfast Bowl','egg-turkey-breakfast-bowl.jpg'],
+        ['Greek Yogurt Protein Bowl','greek-yogurt-protein-bowl.jpg'],
+        ['High-Protein Chicken Pasta','high-protein-chicken-pasta.jpg'],
+        ['Lean Beef Taco Bowl','lean-beef-taco-bowl.jpg'],
+        ['Overnight Protein Oats','overnight-protein-oats.jpg'],
+        ['Protein Shake','protein-shake.jpg'],
+        ['Turkey Chili','turkey-chili.jpg'],
+    ];
+}
+
+// Starters take image_url from starter-recipes.json by starter_key; the older shared recipes match by exact name with
+// no source link. Only empty photos are filled, so anything set by hand stays.
+function ff_migrate_stock_photos(mysqli $c): void {
+    $st=$c->prepare("UPDATE recipes SET image_url=? WHERE starter_key=? AND (image_url IS NULL OR image_url='')");
+    foreach(json_decode(file_get_contents(__DIR__.'/../starter-recipes.json'),true,512,JSON_THROW_ON_ERROR) as $r){if(empty($r['image_url']))continue;$url=$r['image_url'];$key=$r['starter_key'];$st->bind_param('ss',$url,$key);$st->execute();}
+    $st->close();
+    $st=$c->prepare("UPDATE recipes SET image_url=? WHERE starter_key IS NULL AND recipe_name=? AND (source_url IS NULL OR source_url='') AND (image_url IS NULL OR image_url='')");
+    foreach(ff_stock_photo_recipes() as [$name,$file]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$st->bind_param('ss',$url,$name);$st->execute();}
+    $st->close();
 }
 function ff_profile(mysqli $c,int $uid): array {
     $st=$c->prepare('SELECT * FROM user_profiles WHERE user_id=?');$st->bind_param('i',$uid);$st->execute();$p=$st->get_result()->fetch_assoc()?:[];$st->close();

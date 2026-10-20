@@ -55,8 +55,12 @@ with tempfile.TemporaryDirectory(prefix='fitfuel-photos-') as td:
         (1,'Baconator Bowls','https://www.instagram.com/reel/SOMEOTHER1/',None),                         # other source -> untouched
         (1,'Mexican Street Corn Recipe','https://lilluna.com/mexican-street-corn/','API/recipe_image.php?id=9'),  # cached copy -> untouched
         (1,'Quick and Easy Buffalo Chicken Dip','https://www.allrecipes.com/recipe/266408/x/','https://fitfuel.bylerfinancial.com/assets/recipes/mine.jpg'),  # already ours -> untouched
-        (1,'Street Corn Chicken Bowl','https://www.instagram.com/reel/Dc6V36LqGnV/',None)]               # different name -> untouched
-  sql(';'.join("INSERT INTO recipes(user_id,recipe_name,source_url,image_url,ingredients,instructions,servings,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving) VALUES(%d,%s,%s,%s,'[\"x\"]','Cook.',4,300,30,30,10,2)"%(u,json.dumps(n),json.dumps(s),'NULL' if i is None else json.dumps(i)) for u,n,s,i in rows))
+        (1,'Street Corn Chicken Bowl','https://www.instagram.com/reel/Dc6V36LqGnV/',None),               # different name -> untouched
+        (None,'Protein Shake',None,None),                                                               # shared, no source -> stock photo
+        (None,'Turkey Chili',None,'https://example.com/my-chili.jpg'),                                  # already has a photo -> untouched
+        (1,'Lean Beef Taco Bowl','https://example.com/my-taco-bowl/',None),                             # has its own source -> untouched
+        (2,'Cottage Cheese Berry Bowl','',None)]                                                        # no source, empty photo -> stock photo
+  sql(';'.join("INSERT INTO recipes(user_id,recipe_name,source_url,image_url,ingredients,instructions,servings,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving) VALUES(%s,%s,%s,%s,'[\"x\"]','Cook.',4,300,30,30,10,2)"%('NULL' if u is None else u,json.dumps(n),'NULL' if s is None else json.dumps(s),'NULL' if i is None else json.dumps(i)) for u,n,s,i in rows))
   call('api.php?action=recipes')
   img=lambda where:scalar("SELECT COALESCE(image_url,'NULL') FROM recipes WHERE "+where)
   assert img("source_url LIKE '%Dc806rwtgG3%'")==A+'baconator-bowls.jpg'
@@ -69,11 +73,17 @@ with tempfile.TemporaryDirectory(prefix='fitfuel-photos-') as td:
   assert img("recipe_name='Mexican Street Corn Recipe'")=='API/recipe_image.php?id=9'
   assert img("recipe_name='Quick and Easy Buffalo Chicken Dip'")=='https://fitfuel.bylerfinancial.com/assets/recipes/mine.jpg'
   assert img("recipe_name='Street Corn Chicken Bowl'")=='NULL'
+  # Stock photos: starters by starter_key, shared recipes by exact name only when they have no source and no photo.
+  assert img("starter_key='ff-protein-v1-oats'")==A+'greek-yogurt-overnight-oats.jpg' and img("starter_key='ff-protein-v1-chili'")==A+'lean-beef-bean-chili.jpg'
+  assert img("starter_key='ff-protein-v1-tofu'")=='NULL' and img("starter_key='ff-protein-v1-cottage-snack'")=='NULL'  # no good match -> placeholder
+  assert scalar("SELECT COUNT(*) FROM recipes WHERE starter_key IS NOT NULL AND image_url IS NOT NULL")=='13'
+  assert img("recipe_name='Protein Shake'")==A+'protein-shake.jpg' and img("recipe_name='Cottage Cheese Berry Bowl'")==A+'cottage-cheese-berry-bowl.jpg'
+  assert img("recipe_name='Turkey Chili'")=='https://example.com/my-chili.jpg' and img("recipe_name='Lean Beef Taco Bowl'")=='NULL'
   # Run once: a later change by the user is not overwritten.
   sql("UPDATE recipes SET image_url='https://example.com/new.jpg' WHERE recipe_name='Chicken Shawarma Wraps'");call('api.php?action=recipes')
   assert img("recipe_name='Chicken Shawarma Wraps'")=='https://example.com/new.jpg'
   assert scalar("SELECT COUNT(*) FROM ff_migrations WHERE name='recipe-photos-v2'")=='1'
-  print('Recipe photos integration: scoped one-time photo fix, pizza bites rename, and run-once behavior passed.')
+  print('Recipe photos integration: scoped source-photo fix, stock photos, pizza bites rename, and run-once behavior passed.')
  except Exception:
   print((base/'db.log').read_text());print((base/'php.log').read_text());raise
  finally:
