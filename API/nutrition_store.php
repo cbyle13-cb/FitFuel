@@ -19,7 +19,7 @@ function ff_ensure_schema(mysqli $c): void {
 // Run-once data fixes. Each claims its name first, so it never re-applies after a user edits the same rows later.
 function ff_data_migrations(mysqli $c): void {
     $done=array_column($c->query('SELECT name FROM ff_migrations')->fetch_all(MYSQLI_ASSOC),'name');
-    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos'] as $name=>$fn){
+    foreach(['meal-types-v1'=>'ff_migrate_meal_types','recipe-photos-v1'=>'ff_migrate_recipe_photos','recipe-photos-v2'=>'ff_migrate_recipe_photos_v2'] as $name=>$fn){
         if(in_array($name,$done,true))continue;$c->begin_transaction();
         try{$st=$c->prepare('INSERT IGNORE INTO ff_migrations(name) VALUES(?)');$st->bind_param('s',$name);$st->execute();$claimed=$st->affected_rows===1;$st->close();if($claimed)$fn($c);$c->commit();}
         catch(Throwable $e){$c->rollback();error_log('FitFuel migration '.$name.': '.$e->getMessage());}
@@ -55,6 +55,39 @@ function ff_import_meal_types(): array {
 function ff_migrate_recipe_photos(mysqli $c): void {
     $st=$c->prepare("UPDATE recipes SET image_url=? WHERE user_id IS NOT NULL AND recipe_name=? AND calories_per_serving BETWEEN ? AND ? AND (image_url IS NULL OR image_url='' OR image_url NOT LIKE '%/assets/recipes/%')");
     foreach([['Creamy Chicken Alfredo Fried Rice','creamy-chicken-alfredo-fried-rice.jpg',572,574]] as [$name,$file,$lo,$hi]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$st->bind_param('ssdd',$url,$name,$lo,$hi);$st->execute();}$st->close();
+}
+
+/** Committed source photos for saved imports, keyed by recipe name and a unique piece of the source URL. */
+function ff_source_photo_fixes(): array {
+    return [
+        ['Bacon, Egg, Cheese & Chives Egg Bites','/DTsy2FtkcoH','bacon-egg-cheese-chives-egg-bites.jpg'],
+        ['Baconator Bowls','/Dc806rwtgG3','baconator-bowls.jpg'],
+        ['Buffalo Chicken Dip','allrecipes.com/recipe/68461/','buffalo-chicken-dip.jpg'],
+        ['Chicken Shawarma Wraps','/DcB7O3whrEi','chicken-shawarma-wraps.jpg'],
+        ['Creamy Cajun Chicken Pasta','/DeiAxyxPvDU','creamy-cajun-chicken-pasta.jpg'],
+        ['Crispy Hot Honey Chicken Alfredo','/DZ5OPgNRGK6','crispy-hot-honey-chicken-alfredo.jpg'],
+        ['Garlic Butter Chicken & Creamy Potatoes','/DZNlssHiqVc','garlic-butter-chicken-creamy-potatoes.jpg'],
+        ['Greek Beef Wraps with Roasted Garlic Feta Sauce & Hot Honey','/DcUW46zIuTH','greek-beef-wraps-feta-hot-honey.jpg'],
+        ['High Protein Buffalo Chicken Potato Bowls','/DN--B8LDK4b','buffalo-chicken-potato-bowls.jpg'],
+        ['High Protein Grilled Chicken Alfredo Pasta','/DE8HSkcsMDx','grilled-chicken-alfredo-pasta.jpg'],
+        ['High Protein Honey BBQ Chicken & Garlic Parmesan Potatoes','/DHlxKYHNSjt','honey-bbq-chicken-garlic-parmesan-potatoes.jpg'],
+        ['High Protein Lemon Garlic Chicken & Crispy Potatoes','/DEsCsfwsZMq','lemon-garlic-chicken-crispy-potatoes.jpg'],
+        ['High-Protein Chicken & Sweet Potato Power Bowl','/DdFF9bTzEb8','chicken-sweet-potato-power-bowl.jpg'],
+        ['Hot Honey Ribs','howtobbqright.com/2025/02/06/hot-honey-ribs','hot-honey-ribs.jpg'],
+        ['Mexican Street Corn Recipe','lilluna.com/mexican-street-corn','mexican-street-corn.jpg'],
+        ['Quick and Easy Buffalo Chicken Dip','allrecipes.com/recipe/266408/','quick-buffalo-chicken-dip.jpg'],
+        ['Shredded Chipotle Beef','/DdfBzT4EmrF','shredded-chipotle-beef.jpg'],
+        ['Street Corn Chicken Bowls','/Dc6V36LqGnV','street-corn-chicken-bowls.jpg'],
+        ['High-Protein Pizza Bites','/DdtucebzoR6','high-protein-pizza-bites.jpg'],
+    ];
+}
+
+function ff_migrate_recipe_photos_v2(mysqli $c): void {
+    // The pizza bites import saved part of the AI reply as its name; the reel caption says "HIGH-PROTEIN PIZZA BITES".
+    $c->query("UPDATE recipes SET recipe_name='High-Protein Pizza Bites' WHERE user_id IS NOT NULL AND source_url LIKE '%/DdtucebzoR6%' AND recipe_name LIKE 'The reel text includes the nutrition information%'");
+    $st=$c->prepare("UPDATE recipes SET image_url=? WHERE user_id IS NOT NULL AND recipe_name=? AND source_url LIKE ? AND (image_url IS NULL OR image_url='' OR (image_url LIKE 'http%' AND image_url NOT LIKE 'https://fitfuel.bylerfinancial.com/%'))");
+    foreach(ff_source_photo_fixes() as [$name,$key,$file]){$url='https://fitfuel.bylerfinancial.com/assets/recipes/'.$file;$like='%'.$key.'%';$st->bind_param('sss',$url,$name,$like);$st->execute();}
+    $st->close();
 }
 function ff_profile(mysqli $c,int $uid): array {
     $st=$c->prepare('SELECT * FROM user_profiles WHERE user_id=?');$st->bind_param('i',$uid);$st->execute();$p=$st->get_result()->fetch_assoc()?:[];$st->close();

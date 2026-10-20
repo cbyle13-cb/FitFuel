@@ -15,4 +15,5 @@ The nutrition integration test also requires MariaDB server/client binaries and 
 python3 tests/nutrition-integration.py
 python3 tests/family-integration.py
 python3 tests/meal-types-integration.py
+python3 tests/recipe-photos-integration.py
 ```

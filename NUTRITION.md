@@ -53,4 +53,5 @@ Each recipe has one or more meal types (breakfast, lunch, dinner, snack) stored 
 - Starter recipes have no photo. The 15 hunt4shredz imports use committed files in `assets/recipes/`. Other imports store whatever photo URL the source page advertises (`og:image`); Instagram, Facebook, TikTok and Pinterest CDN links are signed and expire, which breaks photos later.
 - New saves from those CDNs are copied into `recipe_image_cache` at save time and served by `API/recipe_image.php` (same visibility as the recipe list).
 - `recipe-photos-v1` (run once) points "Creamy Chicken Alfredo Fried Rice" (573 cal) at its committed photo, only if it still uses an outside link.
+- `recipe-photos-v2` (run once) points 19 saved imports at committed photos taken from their own source posts or pages (list in `ff_source_photo_fixes()`), matched by recipe name plus a unique piece of the source URL, only when the photo is empty or an outside link. It also renames the import saved as "The reel text includes the nutrition information…" to "High-Protein Pizza Bites".
 - Any photo that fails to load shows `assets/recipes/placeholder.svg` instead of a broken-image icon.
