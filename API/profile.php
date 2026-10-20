@@ -7,7 +7,8 @@ if($_SERVER['REQUEST_METHOD']!=='POST')json_response(['success'=>false,'message'
 $in=json_decode(file_get_contents('php://input'),true);if(!is_array($in))json_response(['success'=>false,'message'=>'Invalid request.'],400);
 try{
     $old=ff_profile($conn,$uid);$p=array_merge($old,$in);
-    $prefs=[];foreach(['sex','planner_activity','planner_goal','meals_per_day','excluded_foods','daily_water_goal','auto_targets'] as $k)$prefs[$k]=$p[$k]??null;
+    $prefs=[];foreach(['sex','planner_activity','planner_goal','meals_per_day','excluded_foods','daily_water_goal','auto_targets','meal_shares','family_meals'] as $k)$prefs[$k]=$p[$k]??null;
+    $prefs['meal_shares']=$prefs['meal_shares']===null?ff_default_meal_shares():ff_validate_meal_shares($prefs['meal_shares']);$prefs['family_meals']=ff_family_opt_ins($prefs);
     $prefs['auto_targets']=(bool)$prefs['auto_targets'];$prefs['meals_per_day']=(int)($prefs['meals_per_day']??4);$prefs['daily_water_goal']=(float)($prefs['daily_water_goal']??100);$prefs['excluded_foods']=trim((string)($prefs['excluded_foods']??''));
     if($prefs['meals_per_day']<2||$prefs['meals_per_day']>6||$prefs['daily_water_goal']<=0||$prefs['daily_water_goal']>300||strlen($prefs['excluded_foods'])>2000)throw new InvalidArgumentException('Choose 2–6 meals, a water goal of 1–300 oz, and a shorter food exclusion list.');
     if($prefs['auto_targets'])$p=array_merge($p,ff_targets(array_merge($p,$prefs)));
