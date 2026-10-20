@@ -28,7 +28,14 @@ $m=ff_portion_macros($recipe,1.5);check($m['grams']===450.0&&$m['protein']===67.
 check(ff_cooked_weight('')===null&&ff_cooked_weight(0)===null&&ff_cooked_weight('950')===950.0,'cooked weight parsing');try{ff_cooked_weight(-5);throw new RuntimeException('negative weight');}catch(InvalidArgumentException $e){}
 $recipes=json_decode(file_get_contents(__DIR__.'/../starter-recipes.json'),true);foreach($recipes as $i=>&$r)$r['id']=$i+1;unset($r);
 $teenP=array_merge($teenIn,$t,['excluded_foods'=>'chicken']);$members=[['profile'=>$p,'target'=>ff_member_meal_target($p,'dinner')],['profile'=>$teenP,'target'=>ff_member_meal_target($teenP,'dinner')]];
-$used=[];for($i=0;$i<5;$i++){$pick=ff_family_pick($recipes,$members,'dinner',$used);check($pick!==null,'dinner found');check(ff_eligible($pick,$teenP)&&ff_eligible($pick,$p),'everyone eligible');check(in_array($pick['meal_category'],['dinner','any'],true),'category match');$used[$pick['id']]=($used[$pick['id']]??0)+1;}
-check(max($used)===1||count($used)===count(array_filter($recipes,fn($r)=>$r['meal_category']==='dinner'&&ff_eligible($r,$teenP))),'no repeats before pool exhausted');
+$used=[];for($i=0;$i<5;$i++){$pick=ff_family_pick($recipes,$members,'dinner',$used);check($pick!==null,'dinner found');check(ff_eligible($pick,$teenP)&&ff_eligible($pick,$p),'everyone eligible');check(ff_recipe_fits($pick,'dinner'),'category match');$used[$pick['id']]=($used[$pick['id']]??0)+1;}
+check(max($used)===1||count($used)===count(array_filter($recipes,fn($r)=>ff_recipe_fits($r,'dinner')&&ff_eligible($r,$teenP))),'no repeats before pool exhausted');
 check(ff_family_pick([array_merge($recipes[0],['protein_per_serving'=>6,'calories_per_serving'=>105])],$members,$recipes[0]['meal_category'])===null,'25 g protein rule');
+// Meal types: ordered list, primary first; blank/any means every meal; legacy single category still works.
+check(ff_meal_types_clean('Lunch, dinner,lunch,brunch')===['lunch','dinner'],'clean meal types');check(ff_meal_types_clean(['snack','x'])===['snack'],'array input');
+check(ff_recipe_meal_types(['meal_types'=>'snack,lunch','meal_category'=>'snack'])===['snack','lunch'],'stored list wins');check(ff_recipe_meal_types(['meal_category'=>'breakfast'])===['breakfast'],'legacy category');
+check(ff_recipe_meal_types(['meal_category'=>'any'])===FF_FAMILY_MEALS&&ff_recipe_meal_types([])===FF_FAMILY_MEALS,'any fits every meal');
+check(ff_recipe_fits(['meal_types'=>'lunch,dinner'],'dinner')&&!ff_recipe_fits(['meal_types'=>'lunch,dinner'],'snack'),'fits');
+$burrito=array_merge($recipes[4],['id'=>99,'meal_types'=>'lunch,dinner','meal_category'=>'lunch']);$adultOnly=[$members[0]];check(ff_family_pick([$burrito],$adultOnly,'breakfast')===null&&ff_family_pick([$burrito],$adultOnly,'dinner')!==null,'family pick honors meal types');
+foreach([1,2] as $d){$plan=ff_plan_day($recipes,array_merge($p,['meal_types'=>null,'meals_per_day'=>4]),$d);foreach($plan as $r)check(ff_recipe_fits($r,$r['meal_type']),'planner slot matches meal type');}
 echo "Family core: all checks passed.\n";

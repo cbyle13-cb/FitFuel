@@ -32,7 +32,7 @@
 <div class="grid"><div><label for="protein">Protein (g)</label><input id="protein" type="number" step="0.1"></div><div><label for="carbs">Carbs (g)</label><input id="carbs" type="number" step="0.1"></div></div>
 <div class="grid"><div><label for="fat">Fat (g)</label><input id="fat" type="number" step="0.1"></div><div><label for="fiber">Fiber (g)</label><input id="fiber" type="number" step="0.1"></div></div>
 <div class="grid"><div><label for="prep">Prep minutes</label><input id="prep" type="number"></div><div><label for="cook">Cook minutes</label><input id="cook" type="number"></div></div>
-<button id="estimateBtn" class="secondary" type="button">Estimate nutrition from ingredients</button><p id="nutritionNotice" class="source-note"></p><label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
+<button id="estimateBtn" class="secondary" type="button">Estimate nutrition from ingredients</button><p id="nutritionNotice" class="source-note"></p><fieldset id="importMealTypes"><legend>Meal types</legend><label><input type="checkbox" id="importType_breakfast" value="breakfast"> Breakfast</label> <label><input type="checkbox" id="importType_lunch" value="lunch"> Lunch</label> <label><input type="checkbox" id="importType_dinner" value="dinner"> Dinner</label> <label><input type="checkbox" id="importType_snack" value="snack"> Snack</label><p class="source-note">Leave all unchecked for any meal. The first checked type is the main one.</p></fieldset><label for="description">Description</label><textarea id="description" style="min-height:80px"></textarea>
 <label for="imageUrl">Recipe photo from source</label><input id="imageUrl" type="url" inputmode="url" placeholder="Photo URL">
 <img id="imagePreview" class="photo-preview hidden" alt="Imported recipe preview" referrerpolicy="no-referrer">
 <button id="saveBtn">Save to FitFuel Recipes</button>
@@ -112,6 +112,10 @@ function previewImage(){
  preview.classList.toggle('hidden',!value);
  if(value)preview.src=value;else preview.removeAttribute('src');
 }
+const IMPORT_MEALS=['breakfast','lunch','dinner','snack'];
+// Keep the JSON's meal type(s) so saved recipes land in the right Family Menu slots.
+function importMealTypes(r){const raw=r.meal_types??r.meal_type??r.meal_category??r.category??'';return(Array.isArray(raw)?raw:String(raw).split(/[\s,;\/]+/)).map(x=>String(x).trim().toLowerCase()).filter((x,i,a)=>IMPORT_MEALS.includes(x)&&a.indexOf(x)===i)}
+function checkedImportMealTypes(){return IMPORT_MEALS.filter(m=>$('importType_'+m).checked)}
 function fillStructuredRecipe(r){
  current=r||{};
  const ingredients=listValue(current.ingredients);
@@ -129,6 +133,7 @@ function fillStructuredRecipe(r){
  $('cook').value=minutes(current.cook_time_minutes??current.cook_time);
  $('description').value=current.description||current.summary||'';
  $('imageUrl').value=current.image_url||current.image||'';
+ const types=importMealTypes(current);IMPORT_MEALS.forEach(m=>{$('importType_'+m).checked=types.includes(m)});
  previewImage();
  $('form').classList.remove('hidden');
  $('nutritionNotice').textContent=current.nutrition_notes||'Nutrition shown per serving. Check the whole recipe serving count before estimating.';
@@ -184,7 +189,7 @@ async function importRecipe(){
  finally{$('importBtn').disabled=false}
 }
 async function saveRecipe(){
- const payload={action:'recipe_add',nutrition_status:current.nutrition_status||'provided',nutrition_notes:current.nutrition_notes||'',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),image_url:$('imageUrl').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0};
+ const payload={action:'recipe_add',nutrition_status:current.nutrition_status||'provided',nutrition_notes:current.nutrition_notes||'',recipe_name:$('name').value.trim(),description:$('description').value.trim(),source_url:$('url').value.trim(),image_url:$('imageUrl').value.trim(),source_type:current.source_type||'web',ingredients:$('ingredients').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),instructions:$('instructions').value.trim(),servings:Number($('servings').value)||1,prep_time_minutes:$('prep').value===''?null:Number($('prep').value),cook_time_minutes:$('cook').value===''?null:Number($('cook').value),calories_per_serving:Number($('calories').value)||0,protein_per_serving:Number($('protein').value)||0,carbs_per_serving:Number($('carbs').value)||0,fat_per_serving:Number($('fat').value)||0,fiber_per_serving:Number($('fiber').value)||0,meal_types:checkedImportMealTypes(),meal_category:checkedImportMealTypes()[0]||'any'};
  if(!payload.recipe_name){saveMessage('Recipe name is required.');return}
  const saveBtn=$('saveBtn');
  saveBtn.disabled=true;

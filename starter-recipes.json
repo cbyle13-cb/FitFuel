@@ -3,6 +3,7 @@
     "starter_key": "ff-protein-v1-oats",
     "recipe_name": "Greek Yogurt Overnight Oats",
     "meal_category": "breakfast",
+    "meal_types": ["breakfast"],
     "servings": 4,
     "ingredients": [
       "1000 g nonfat greek yogurt",
@@ -22,6 +23,7 @@
     "starter_key": "ff-protein-v1-eggs",
     "recipe_name": "Egg and Potato Breakfast Bowls",
     "meal_category": "breakfast",
+    "meal_types": ["breakfast"],
     "servings": 4,
     "ingredients": [
       "800 g egg whites",
@@ -42,6 +44,7 @@
     "starter_key": "ff-protein-v1-toast",
     "recipe_name": "Cottage Cheese Egg Toast",
     "meal_category": "breakfast",
+    "meal_types": ["breakfast", "snack"],
     "servings": 4,
     "ingredients": [
       "800 g low fat cottage cheese",
@@ -61,6 +64,7 @@
     "starter_key": "ff-protein-v1-banana",
     "recipe_name": "Banana Yogurt Oat Bowls",
     "meal_category": "breakfast",
+    "meal_types": ["breakfast"],
     "servings": 4,
     "ingredients": [
       "1200 g nonfat greek yogurt",
@@ -80,6 +84,7 @@
     "starter_key": "ff-protein-v1-chicken-rice",
     "recipe_name": "Lemon Chicken Rice Bowls",
     "meal_category": "lunch",
+    "meal_types": ["lunch", "dinner"],
     "servings": 4,
     "ingredients": [
       "800 g chicken breast",
@@ -101,6 +106,7 @@
     "starter_key": "ff-protein-v1-turkey-taco",
     "recipe_name": "Turkey Taco Rice Bowls",
     "meal_category": "lunch",
+    "meal_types": ["lunch", "dinner"],
     "servings": 4,
     "ingredients": [
       "800 g lean ground turkey",
@@ -122,6 +128,7 @@
     "starter_key": "ff-protein-v1-tuna",
     "recipe_name": "Tuna Yogurt Wraps",
     "meal_category": "lunch",
+    "meal_types": ["lunch"],
     "servings": 4,
     "ingredients": [
       "600 g canned tuna drained",
@@ -142,6 +149,7 @@
     "starter_key": "ff-protein-v1-chicken-potato",
     "recipe_name": "Chicken and Sweet Potato Prep",
     "meal_category": "lunch",
+    "meal_types": ["lunch", "dinner"],
     "servings": 4,
     "ingredients": [
       "800 g chicken breast",
@@ -162,6 +170,7 @@
     "starter_key": "ff-protein-v1-tofu",
     "recipe_name": "Tofu Black Bean Quinoa Bowls",
     "meal_category": "lunch",
+    "meal_types": ["lunch", "dinner"],
     "servings": 4,
     "ingredients": [
       "800 g firm tofu",
@@ -182,6 +191,7 @@
     "starter_key": "ff-protein-v1-chili",
     "recipe_name": "Lean Beef and Bean Chili",
     "meal_category": "dinner",
+    "meal_types": ["dinner", "lunch"],
     "servings": 4,
     "ingredients": [
       "800 g lean ground beef",
@@ -203,6 +213,7 @@
     "starter_key": "ff-protein-v1-pasta",
     "recipe_name": "Chicken Yogurt Alfredo Pasta",
     "meal_category": "dinner",
+    "meal_types": ["dinner"],
     "servings": 4,
     "ingredients": [
       "800 g chicken breast",
@@ -224,6 +235,7 @@
     "starter_key": "ff-protein-v1-salmon",
     "recipe_name": "Salmon Quinoa and Broccoli",
     "meal_category": "dinner",
+    "meal_types": ["dinner"],
     "servings": 4,
     "ingredients": [
       "800 g salmon",
@@ -244,6 +256,7 @@
     "starter_key": "ff-protein-v1-shrimp",
     "recipe_name": "Shrimp Rice Skillet",
     "meal_category": "dinner",
+    "meal_types": ["dinner"],
     "servings": 4,
     "ingredients": [
       "1000 g shrimp peeled",
@@ -265,6 +278,7 @@
     "starter_key": "ff-protein-v1-burger",
     "recipe_name": "Beef Burger Potato Bowls",
     "meal_category": "dinner",
+    "meal_types": ["dinner", "lunch"],
     "servings": 4,
     "ingredients": [
       "800 g lean ground beef",
@@ -285,6 +299,7 @@
     "starter_key": "ff-protein-v1-yogurt-snack",
     "recipe_name": "Greek Yogurt Peanut Butter Cups",
     "meal_category": "snack",
+    "meal_types": ["snack"],
     "servings": 4,
     "ingredients": [
       "1200 g nonfat greek yogurt",
@@ -303,6 +318,7 @@
     "starter_key": "ff-protein-v1-cottage-snack",
     "recipe_name": "Cottage Cheese Apple Bowls",
     "meal_category": "snack",
+    "meal_types": ["snack", "breakfast"],
     "servings": 4,
     "ingredients": [
       "1200 g low fat cottage cheese",
@@ -321,6 +337,7 @@
     "starter_key": "ff-protein-v1-tuna-snack",
     "recipe_name": "Tuna Toast Snack Plates",
     "meal_category": "snack",
+    "meal_types": ["snack", "lunch"],
     "servings": 4,
     "ingredients": [
       "500 g canned tuna drained",
@@ -340,6 +357,7 @@
     "starter_key": "ff-protein-v1-yogurt-smoothie",
     "recipe_name": "Banana Greek Yogurt Smoothie",
     "meal_category": "snack",
+    "meal_types": ["snack", "breakfast"],
     "servings": 4,
     "ingredients": [
       "1000 g nonfat greek yogurt",

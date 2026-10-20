@@ -203,8 +203,9 @@ if (!$st->execute()) {
 }
 $recipeId = (int)$conn->insert_id;
 $st->close();
-$status=$enriched['nutrition_status']??'provided';if(!in_array($status,['provided','estimated','incomplete'],true))$status='incomplete';$nutritionNotes=$enriched['nutrition_notes']??'';$category=$in['meal_category']??'any';if(!in_array($category,['any','breakfast','lunch','dinner','snack'],true))$category='any';
-$st=$conn->prepare('UPDATE recipes SET nutrition_status=?,nutrition_notes=?,meal_category=? WHERE id=? AND user_id=?');$st->bind_param('sssii',$status,$nutritionNotes,$category,$recipeId,$uid);$st->execute();$st->close();
+$status=$enriched['nutrition_status']??'provided';if(!in_array($status,['provided','estimated','incomplete'],true))$status='incomplete';$nutritionNotes=$enriched['nutrition_notes']??'';$category=$in['meal_category']??'any';if(!in_array($category,['any','breakfast','lunch','dinner','snack'],true))$category='any';$types=ff_meal_types_clean($in['meal_types']??[]);if($types)$category=$types[0];$typeList=$types?implode(',',$types):null;
+$st=$conn->prepare('UPDATE recipes SET nutrition_status=?,nutrition_notes=?,meal_category=?,meal_types=? WHERE id=? AND user_id=?');$st->bind_param('ssssii',$status,$nutritionNotes,$category,$typeList,$recipeId,$uid);$st->execute();$st->close();
+if($imageUrl)ff_cache_recipe_image($conn,$recipeId,$imageUrl);
 
 $st = $conn->prepare("UPDATE shortcut_import_tokens SET last_used_at=NOW() WHERE id=?");
 $st->bind_param('i', $tokenId);

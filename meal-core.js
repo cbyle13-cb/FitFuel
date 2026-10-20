@@ -9,5 +9,9 @@ const MealCore=(()=>{
  function totals(meals){return meals.reduce((t,r)=>{for(const k of Object.keys(t))t[k]+=Number(r[k+'_per_serving']||0)*Number(r.portion_servings||1);return t},{calories:0,protein:0,carbs:0,fat:0});}
  function warning(meals,p){const t=totals(meals);return Object.entries({calories:'calorie',protein:'protein',carbs:'carbs',fat:'fat'}).filter(([k,f])=>Number(p['daily_'+f+'_goal'])>0&&Math.abs(t[k]-Number(p['daily_'+f+'_goal']))/Number(p['daily_'+f+'_goal'])>.1).map(([k])=>k);}
  function prep(plans){const groups=new Map();Object.values(plans||{}).flat().forEach(r=>{const id=Number(r.recipe_id||r.id);if(!groups.has(id))groups.set(id,{...r,portions:0,meals:0});const g=groups.get(id);g.portions+=Number(r.portion_servings||1);g.meals++;});return [...groups.values()].map(r=>({...r,batches:r.portions/Math.max(.1,Number(r.servings)||1)}));}
- return{dateKey,shift,weekStart,highProtein,complete,eligible,totals,warning,prep};
+ const MEALS=['breakfast','lunch','dinner','snack'];
+ // First type is primary. Blank or 'any' falls back to every meal, matching ff_recipe_meal_types on the server.
+ function mealTypes(r){const list=(Array.isArray(r?.meal_types)?r.meal_types:String(r?.meal_types||'').split(/[\s,;]+/)).map(x=>String(x).trim().toLowerCase()).filter((x,i,a)=>MEALS.includes(x)&&a.indexOf(x)===i);if(list.length)return list;return MEALS.includes(r?.meal_category)?[r.meal_category]:MEALS.slice()}
+ function fits(r,type){return mealTypes(r).includes(type)}
+ return{MEALS,mealTypes,fits,dateKey,shift,weekStart,highProtein,complete,eligible,totals,warning,prep};
 })();
