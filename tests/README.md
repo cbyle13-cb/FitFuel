@@ -4,6 +4,7 @@ Run from the repository root:
 npm install --prefix /tmp/fitfuel-test-deps jsdom@26
 NODE_PATH=/tmp/fitfuel-test-deps/node_modules node --test tests/*.test.cjs
 php tests/nutrition-core.test.php
+php tests/family-core.test.php
 find API -name '*.php' -exec php -l {} \;
 ```
 
@@ -11,4 +12,5 @@ The nutrition integration test also requires MariaDB server/client binaries and 
 
 ```sh
 python3 tests/nutrition-integration.py
+python3 tests/family-integration.py
 ```

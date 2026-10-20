@@ -6,6 +6,7 @@ Database-backed FitFuel application with:
 - Food logging
 - Barcode lookup via backend
 - Recipes and meal planning
+- Family Menu: one meal cooked once, portioned to each member's targets
 - Progress tracking
 - Workout logging
 - Automatic ChatGPT weekly workout-plan import
