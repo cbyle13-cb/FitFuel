@@ -39,3 +39,18 @@ Automatic targets for ages 13–17 use maintenance calories only — never a def
 ### Family migrations
 
 `ff_ensure_schema` adds `family_meal_plans`, `family_meal_portions`, and the nullable `recipes.total_cooked_weight_g` with `CREATE TABLE IF NOT EXISTS` / add-column-if-missing. Nothing existing is dropped or altered. The new tables have no foreign keys; membership is enforced in `API/family_planner.php`.
+
+## Meal types
+
+Each recipe has one or more meal types (breakfast, lunch, dinner, snack) stored in `recipes.meal_types` as an ordered list; the first is the main type and is mirrored into the older `meal_category` column. No type (or `any`) means the recipe fits every meal. The personal planner and the Family Menu only put a recipe into a slot that matches one of its types.
+
+- **Edit**: open a recipe → **Edit meal types** (recipe owner, or the family owner for recipes added by family members). Add-recipe, Review nutrition, and the recipe import page use the same checkboxes. Starter recipes are shared by every family, so their types come from `starter-recipes.json`.
+- **Importer**: recipe JSON `meal_types` (or `meal_category`/`meal_type`) now pre-checks the import page boxes and is saved; previously the import page dropped it.
+- **Backfill** (`meal-types-v1`, run once via `ff_migrations`): sets starter types, and types for the 15 hunt4shredz imports matched by their committed photo URL and name, only while they are still untyped.
+
+## Recipe photos
+
+- Starter recipes have no photo. The 15 hunt4shredz imports use committed files in `assets/recipes/`. Other imports store whatever photo URL the source page advertises (`og:image`); Instagram, Facebook, TikTok and Pinterest CDN links are signed and expire, which breaks photos later.
+- New saves from those CDNs are copied into `recipe_image_cache` at save time and served by `API/recipe_image.php` (same visibility as the recipe list).
+- `recipe-photos-v1` (run once) points "Creamy Chicken Alfredo Fried Rice" (573 cal) at its committed photo, only if it still uses an outside link.
+- Any photo that fails to load shows `assets/recipes/placeholder.svg` instead of a broken-image icon.
