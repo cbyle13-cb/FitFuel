@@ -49,7 +49,7 @@ function fm_lines(array $recipe,array $rows,array $members,int $uid): array {
     return [$lines,$batch];
 }
 function fm_public_recipe(array $r): array {
-    $out=[];foreach(['id','recipe_name','servings','ingredients','image_url','meal_category','calories_per_serving','protein_per_serving','carbs_per_serving','fat_per_serving','fiber_per_serving','total_cooked_weight_g'] as $k)$out[$k]=$r[$k]??null;return $out;
+    $out=[];foreach(['id','recipe_name','servings','ingredients','image_url','meal_category','meal_types','calories_per_serving','protein_per_serving','carbs_per_serving','fat_per_serving','fiber_per_serving','total_cooked_weight_g'] as $k)$out[$k]=$r[$k]??null;return $out;
 }
 function fm_week(mysqli $c,int $fid,string $start,array $recipes,array $members,int $uid): array {
     $end=(new DateTimeImmutable($start))->modify('+6 days')->format('Y-m-d');
@@ -68,7 +68,7 @@ try{
         if($action==='portion_preview'){
             $r=$recipes[(int)($_GET['recipe_id']??0)]??null;if(!$r)throw new InvalidArgumentException('Recipe unavailable.');
             if(!ff_complete($r))throw new InvalidArgumentException('Add complete nutrition to this recipe first.');
-            $type=(string)($_GET['meal_type']??'');if(!in_array($type,FF_FAMILY_MEALS,true))$type=in_array($r['meal_category']??'',FF_FAMILY_MEALS,true)?$r['meal_category']:'dinner';
+            $type=(string)($_GET['meal_type']??'');if(!in_array($type,FF_FAMILY_MEALS,true)){$types=ff_recipe_meal_types($r);$type=count($types)===count(FF_FAMILY_MEALS)?'dinner':$types[0];}
             $date=ff_date((string)($_GET['date']??date('Y-m-d')));$rows=[];
             foreach($members as $m)$rows[$m['id']]=['portion_servings'=>fm_fit($conn,$m,$r,$date,$type,$cache),'override_servings'=>null,'skipped'=>$m['opt_in'][$type]?0:1,'live_log'=>null];
             [$lines,$batch]=fm_lines($r,$rows,$members,$uid);

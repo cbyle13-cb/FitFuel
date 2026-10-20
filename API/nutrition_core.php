@@ -69,7 +69,7 @@ function ff_plan_day(array $recipes,array $p,int $day=0): array {
     for($attempt=0;$attempt<96;$attempt++){
         $meals=[];$used=[];$seed=($day+1)*7919+($attempt+1)*104729;
         foreach($slots as $i=>$slot){
-            $category=array_values(array_filter($pool,fn($r)=>($r['meal_category']??'any')===$slot||($r['meal_category']??'any')==='any'));
+            $category=array_values(array_filter($pool,fn($r)=>ff_recipe_fits($r,$slot)));
             if(!$category)$category=$pool;
             $unused=array_values(array_filter($category,fn($r)=>!in_array($r['id'],$used,true)));if($unused)$category=$unused;
             $seed=($seed*48271)%2147483647;$r=$category[$seed%count($category)];$r['meal_type']=$slot;$meals[]=$r;$used[]=$r['id'];
@@ -124,10 +124,22 @@ function ff_portion_macros(array $recipe,float $servings): array {
 function ff_family_pick(array $recipes,array $members,string $type,array $used=[]): ?array {
     $best=null;$bestScore=INF;
     foreach($recipes as $r){
-        $category=$r['meal_category']??'any';if($category!=='any'&&$category!==$type)continue;
+        if(!ff_recipe_fits($r,$type))continue;
         $score=0.;foreach($members as $m){if(!ff_eligible($r,$m['profile'])){$score=INF;break;}if(!ff_has_targets($m['profile']))continue;$n=ff_fit_member_portion($r,$m['target']);$score+=ff_score(ff_totals([array_merge($r,['portion_servings'=>$n])]),['daily_calorie_goal'=>$m['target']['calories'],'daily_protein_goal'=>$m['target']['protein'],'daily_carbs_goal'=>$m['target']['carbs'],'daily_fat_goal'=>$m['target']['fat']]);}
         if($score===INF)continue;$score+=1000*($used[(int)$r['id']]??0);
         if($score<$bestScore-1e-9){$best=$r;$bestScore=$score;}
     }
     return $best;
 }
+// Meal types: recipes.meal_types holds an ordered comma list (first = primary). Older rows fall back to the single
+// meal_category; 'any' or blank means the recipe fits every meal.
+function ff_meal_types_clean($v): array {
+    $list=is_array($v)?$v:preg_split('/[\s,;]+/',(string)$v,-1,PREG_SPLIT_NO_EMPTY);$out=[];
+    foreach($list as $x){$x=strtolower(trim((string)$x));if(in_array($x,FF_FAMILY_MEALS,true)&&!in_array($x,$out,true))$out[]=$x;}
+    return $out;
+}
+function ff_recipe_meal_types(array $r): array {
+    $t=ff_meal_types_clean($r['meal_types']??'');if($t)return $t;
+    $c=$r['meal_category']??'any';return in_array($c,FF_FAMILY_MEALS,true)?[$c]:FF_FAMILY_MEALS;
+}
+function ff_recipe_fits(array $r,string $type): bool {return in_array($type,ff_recipe_meal_types($r),true);}
