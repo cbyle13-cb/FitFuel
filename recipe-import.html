@@ -118,7 +118,7 @@ function previewImage(){
  if(value)preview.src=value;else preview.removeAttribute('src');
 }
 const IMPORT_MEALS=['breakfast','lunch','dinner','snack'];
-// Keep the JSON's meal type(s) so saved recipes land in the right Family Menu slots.
+// Keep the JSON's meal type(s) so saved recipes land in the right Family Meal Plan slots.
 function importMealTypes(r){const raw=r.meal_types??r.meal_type??r.meal_category??r.category??'';return(Array.isArray(raw)?raw:String(raw).split(/[\s,;\/]+/)).map(x=>String(x).trim().toLowerCase()).filter((x,i,a)=>IMPORT_MEALS.includes(x)&&a.indexOf(x)===i)}
 function checkedImportMealTypes(){return IMPORT_MEALS.filter(m=>$('importType_'+m).checked)}
 function fillStructuredRecipe(r){

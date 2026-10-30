@@ -102,3 +102,20 @@ test('app links to the setup pages in the same window',()=>{
  const manifest=JSON.parse(read('manifest.json'));
  assert.equal(manifest.scope,'./');assert.equal(manifest.start_url,'./');
 });
+
+test('plan tabs use the names My Meal Plan and Family Meal Plan, with routes unchanged',()=>{
+ const html=read('index.html'),inline=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1].replace('init();','');
+ const dom=new JSDOM('<div id="sub"></div><nav id="nav"></nav><main id="app"></main>',{url:'https://fitfuel.example/',runScripts:'dangerously'}),w=dom.window;
+ w.eval(read('meal-core.js')+'\n'+inline+'\nnav("plan");');
+ const labels=[...w.document.querySelectorAll('#nav button')].map(b=>b.textContent);
+ assert.ok(labels.includes('My Meal Plan'));assert.ok(labels.includes('Family Meal Plan'));
+ assert.ok(!labels.includes('Meal Plan'));assert.ok(!labels.includes('Family Menu'));
+ const buttons=[...w.document.querySelectorAll('#nav button')];
+ assert.match(buttons.find(b=>b.textContent==='My Meal Plan').getAttribute('onclick'),/show\('plan'\)/);
+ assert.match(buttons.find(b=>b.textContent==='Family Meal Plan').getAttribute('onclick'),/show\('familymenu'\)/);
+ dom.window.close();
+ const visible=['index.html','family-menu.js','meal-planner.js'].map(read).join('\n');
+ assert.doesNotMatch(visible,/Family Menu|FAMILY MENU|family menu/);
+ assert.match(read('family-menu.js'),/FAMILY MEAL PLAN/);
+ assert.match(read('meal-planner.js'),/MY MEAL PLAN/);
+});

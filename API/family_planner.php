@@ -132,4 +132,4 @@ try{
         $conn->commit();json_response(['success'=>true]);
     }
 }catch(InvalidArgumentException $e){try{$conn->rollback();}catch(Throwable $x){}json_response(['success'=>false,'message'=>$e->getMessage()],422);}
-catch(Throwable $e){try{$conn->rollback();}catch(Throwable $x){}error_log('FitFuel family planner: '.$e->getMessage());json_response(['success'=>false,'message'=>'Unable to update the family menu. Please try again.'],500);}
+catch(Throwable $e){try{$conn->rollback();}catch(Throwable $x){}error_log('FitFuel family planner: '.$e->getMessage());json_response(['success'=>false,'message'=>'Unable to update the family meal plan. Please try again.'],500);}
