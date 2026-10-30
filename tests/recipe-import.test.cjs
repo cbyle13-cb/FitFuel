@@ -37,3 +37,32 @@ test('social imports fall back to caption text with recipe sections', () => {
   assert.match(endpoint, /\$in\['text'\].*\$in\['caption'\].*\$in\['recipe_text'\]/s);
   assert.match(endpoint, /recipe_import_from_text\(\$sharedText,\s*\$sharedUrl\)/);
 });
+
+test('recipe source photos are extracted, saved, and displayed', () => {
+  const importer = read('API/recipe_importer.php');
+  const shortcut = read('API/shortcut_recipe.php');
+  const api = read('API/api.php');
+  const page = read('recipe-import.html');
+  const app = read('index.html');
+  assert.match(importer, /og:image/);
+  assert.match(importer, /twitter:image/);
+  assert.match(importer, /recipe_import_page_image/);
+  assert.match(shortcut, /image_url/);
+  assert.match(api, /image_url/);
+  assert.match(page, /imagePreview/);
+  assert.match(page, /image_url:\$\('imageUrl'\)/);
+  assert.match(app, /recipe-photo/);
+  assert.match(app, /recipe-detail-photo/);
+});
+
+test('recipe cards open a scalable full-recipe dialog', () => {
+  const app = read('index.html');
+  const styles = read('ui-refresh.css');
+  assert.match(app, /onclick="openRecipe\(/);
+  assert.match(app, /dialog\.showModal\(\)/);
+  assert.match(app, /id="servingSlider"/);
+  assert.match(app, /RecipeCore\.scaledIngredients/);
+  assert.match(app, /Whole recipe:/);
+  assert.match(styles, /\.recipe-photo[^}]*object-fit:contain/);
+  assert.match(styles, /\.recipe-popup-photo/);
+});

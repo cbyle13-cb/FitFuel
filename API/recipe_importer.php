@@ -1,4 +1,5 @@
 <?php
+require_once 'nutrition_estimator.php';
 
 class RecipeImportException extends RuntimeException {
     public int $httpStatus;
@@ -35,6 +36,49 @@ function recipe_import_resolve_url(string $base, string $location): string {
     if (isset($parts['port'])) $origin .= ':'.$parts['port'];
     if (str_starts_with($location, '/')) return $origin.$location;
     return $origin.preg_replace('~/[^/]*$~', '/', $parts['path'] ?? '/').$location;
+}
+
+function recipe_import_clean_image_url($value, string $base): string {
+    if (is_array($value)) {
+        $value = $value['url'] ?? $value['contentUrl'] ?? ($value[0] ?? '');
+        if (is_array($value)) $value = $value['url'] ?? $value['contentUrl'] ?? '';
+    }
+    $url = trim(html_entity_decode((string)$value, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    if ($url === '') return '';
+    $url = recipe_import_resolve_url($base, $url);
+    try { recipe_import_validate_url($url); } catch (Throwable $error) { return ''; }
+    return strlen($url) <= 2048 ? $url : '';
+}
+
+function recipe_import_page_image(DOMXPath $xpath, string $base, $structuredImage = ''): string {
+    $image = recipe_import_clean_image_url($structuredImage, $base);
+    if ($image !== '') return $image;
+    $queries = [
+        '//meta[@property="og:image:secure_url"]/@content',
+        '//meta[@property="og:image"]/@content',
+        '//meta[@name="twitter:image"]/@content',
+        '//meta[@property="twitter:image"]/@content',
+    ];
+    foreach ($queries as $query) {
+        $nodes = $xpath->query($query);
+        if ($nodes && $nodes->length) {
+            $image = recipe_import_clean_image_url($nodes->item(0)->nodeValue, $base);
+            if ($image !== '') return $image;
+        }
+    }
+    return '';
+}
+
+function recipe_import_source_image(string $url): string {
+    try {
+        [$html, $finalUrl] = recipe_import_fetch_html(trim($url));
+        libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html, LIBXML_NOWARNING | LIBXML_NOERROR);
+        $image = recipe_import_page_image(new DOMXPath($dom), $finalUrl);
+        libxml_clear_errors();
+        return $image;
+    } catch (Throwable $error) { return ''; }
 }
 
 function recipe_import_fetch_html(string $initialUrl): array {
@@ -134,8 +178,13 @@ function recipe_import_from_text(string $rawText, string $sourceUrl=''): array {
     // “🛒 Ingredients” and “👨‍🍳 How To Make It”.
     $ingredientHeader='/^[^\p{L}\p{N}]*(?:ingredients?|what you(?:’|\')?ll need|you(?:’|\')?ll need)\s*:?[\s]*$/iu';
     $instructionHeader='/^[^\p{L}\p{N}]*(?:directions?|instructions?|method|steps?|how to make(?: it)?)\s*:?[\s]*$/iu';
+    preg_match('/(?:servings?\s*:\s*|makes\s+|serves\s+)(\d+(?:\.\d+)?)/i',$text,$yieldMatch);
+    $yield=(float)($yieldMatch[1]??1);$provided=[];
+    foreach(['calories','protein','carbs','fat','fiber'] as $field){if(preg_match('/(?:^|\n)\s*'.$field.'(?:\s+per\s+serving)?\s*:\s*(\d+(?:\.\d+)?)/i',$text,$m))$provided[$field.'_per_serving']=(float)$m[1];}
     $section='';$ingredients=[];$steps=[];$title='';$sawIngredientHeader=false;$sawInstructionHeader=false;
     foreach($lines as$line){
+        if(preg_match('/^nutrition\b/i',$line)){$section='nutrition';continue;}
+        if(preg_match('/^(servings?|calories|protein|carbs|fat|fiber)(?:\s+per\s+serving)?\s*:/i',$line))continue;
         if(preg_match($ingredientHeader,$line)){$section='ingredients';$sawIngredientHeader=true;continue;}
         if(preg_match($instructionHeader,$line)){$section='instructions';$sawInstructionHeader=true;continue;}
         if($title===''&&!recipe_import_social_noise($line))$title=recipe_import_social_title(preg_replace('/^[#*\s]+|[#*\s]+$/u','',$line));
@@ -166,7 +215,8 @@ function recipe_import_from_text(string $rawText, string $sourceUrl=''): array {
 
     if(!$ingredients||!$steps)throw new RecipeImportException('FitFuel found the shared text, but could not reliably identify both ingredients and instructions. Try a post whose caption includes the recipe, or share the caption text with the link.');
     if($title===''||preg_match($ingredientHeader,$title))$title='Imported Social Recipe';
-    return ['recipe_name'=>substr($title,0,255),'description'=>'','source_url'=>$sourceUrl,'source_type'=>'social','ingredients'=>array_slice(array_values(array_unique($ingredients)),0,250),'instructions'=>implode("\n",array_values(array_unique($steps))),'servings'=>1,'prep_time_minutes'=>null,'cook_time_minutes'=>null,'calories_per_serving'=>0,'protein_per_serving'=>0,'carbs_per_serving'=>0,'fat_per_serving'=>0,'fiber_per_serving'=>0,'image_url'=>''];
+    $recipe=['recipe_name'=>substr($title,0,255),'description'=>'','source_url'=>$sourceUrl,'source_type'=>'social','ingredients'=>array_slice(array_values(array_unique($ingredients)),0,250),'instructions'=>implode("\n",array_values(array_unique($steps))),'servings'=>$yield,'prep_time_minutes'=>null,'cook_time_minutes'=>null,'calories_per_serving'=>0,'protein_per_serving'=>0,'carbs_per_serving'=>0,'fat_per_serving'=>0,'fiber_per_serving'=>0,'image_url'=>''];
+    return ff_enrich_recipe(array_merge($recipe,$provided));
 }
 
 function recipe_import_from_url(string $url): array {
@@ -175,6 +225,6 @@ function recipe_import_from_url(string $url): array {
     if(!$node)throw new RecipeImportException('FitFuel could not find structured recipe data on this page. You can still enter it manually.');
     $ingredients=[];foreach(($node['recipeIngredient']??[])as$ingredient){$ingredient=trim(strip_tags((string)$ingredient));if($ingredient!=='')$ingredients[]=$ingredient;}
     $nutrition=is_array($node['nutrition']??null)?$node['nutrition']:[];$servings=recipe_import_number($node['recipeYield']??1);if($servings<=0)$servings=1;
-    $image=$node['image']??'';if(is_array($image)){$image=$image['url']??($image[0]??'');if(is_array($image))$image=$image['url']??'';}
+    $image=recipe_import_page_image($xpath,$finalUrl,$node['image']??'');
     return ['recipe_name'=>trim(strip_tags((string)($node['name']??'')))?:'Imported Recipe','description'=>trim(strip_tags((string)($node['description']??''))),'source_url'=>$finalUrl,'source_type'=>'web','ingredients'=>$ingredients,'instructions'=>recipe_import_instruction_text($node['recipeInstructions']??[]),'servings'=>$servings,'prep_time_minutes'=>recipe_import_minutes($node['prepTime']??null),'cook_time_minutes'=>recipe_import_minutes($node['cookTime']??null),'calories_per_serving'=>recipe_import_number($nutrition['calories']??0),'protein_per_serving'=>recipe_import_number($nutrition['proteinContent']??0),'carbs_per_serving'=>recipe_import_number($nutrition['carbohydrateContent']??0),'fat_per_serving'=>recipe_import_number($nutrition['fatContent']??0),'fiber_per_serving'=>recipe_import_number($nutrition['fiberContent']??0),'image_url'=>(string)$image];
 }

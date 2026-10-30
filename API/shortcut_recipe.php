@@ -1,6 +1,9 @@
 <?php
 require_once 'session.php';
 require_once 'recipe_importer.php';
+require_once 'recipe_images.php';
+require_once 'nutrition_store.php';
+require_once 'nutrition_estimator.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(['success' => false, 'message' => 'POST requests only.'], 405);
@@ -87,6 +90,7 @@ if (!is_array($in)) {
 }
 
 ensure_shortcut_tokens_table($conn);
+ensure_recipe_image_column($conn);
 $rawToken = shortcut_token_from_request($in);
 if ($rawToken === '' || strlen($rawToken) < 32) {
     json_response(['success' => false, 'message' => 'A valid FitFuel import key is required.'], 401);
@@ -101,6 +105,7 @@ if (!$tokenRow || (int)$tokenRow['is_active'] !== 1) {
     json_response(['success' => false, 'message' => 'FitFuel import key is invalid or revoked.'], 401);
 }
 $uid = (int)$tokenRow['user_id'];
+ff_ensure_schema($conn);
 $tokenId = (int)$tokenRow['id'];
 
 $sharedUrl = trim((string)($in['url'] ?? $in['recipe_url'] ?? ''));
@@ -120,6 +125,7 @@ if ($sharedUrl !== '') {
         if ($sharedText === '') json_response(['success' => false, 'message' => $e->getMessage()], $e->httpStatus);
         try {
             $in = array_merge($in, recipe_import_from_text($sharedText, $sharedUrl));
+            $in['image_url'] = recipe_import_source_image($sharedUrl);
         } catch (RecipeImportException $textError) {
             json_response(['success' => false, 'message' => $e->getMessage() . ' ' . $textError->getMessage()], 422);
         }
@@ -171,6 +177,8 @@ if ($instructions === '') {
 $description = clean_string($in['description'] ?? '', 5000);
 $sourceUrl = clean_string($in['source_url'] ?? '', 2000);
 if ($sourceUrl !== '' && !filter_var($sourceUrl, FILTER_VALIDATE_URL)) $sourceUrl = '';
+$imageUrl = clean_recipe_image_url($in['image_url'] ?? '');
+$imageUrl = $imageUrl !== '' ? $imageUrl : null;
 $sourceType = clean_string($in['source_type'] ?? 'shortcut', 50);
 $servings = isset($nutritionFromText['servings']) ? $nutritionFromText['servings'] : (float)($in['servings'] ?? 1);
 if ($servings <= 0) $servings = 1;
@@ -181,16 +189,23 @@ $pro = isset($nutritionFromText['protein_per_serving']) ? $nutritionFromText['pr
 $carbs = isset($nutritionFromText['carbs_per_serving']) ? $nutritionFromText['carbs_per_serving'] : (float)($in['carbs_per_serving'] ?? 0);
 $fat = isset($nutritionFromText['fat_per_serving']) ? $nutritionFromText['fat_per_serving'] : (float)($in['fat_per_serving'] ?? 0);
 $fiber = isset($nutritionFromText['fiber_per_serving']) ? $nutritionFromText['fiber_per_serving'] : (float)($in['fiber_per_serving'] ?? 0);
+// Preserve explicit caption nutrition; estimate only when calories are absent.
+$nutritionInput=array_merge($in,['ingredients'=>$ingredients,'servings'=>$servings,'calories_per_serving'=>$cal,'protein_per_serving'=>$pro,'carbs_per_serving'=>$carbs,'fat_per_serving'=>$fat,'fiber_per_serving'=>$fiber]);
+$enriched=ff_enrich_recipe($nutritionInput);
+$cal=$enriched['calories_per_serving'];$pro=$enriched['protein_per_serving'];$carbs=$enriched['carbs_per_serving'];$fat=$enriched['fat_per_serving'];$fiber=$enriched['fiber_per_serving'];
 $fav = (int)($in['is_favorite'] ?? 0) ? 1 : 0;
 
-$st = $conn->prepare("INSERT INTO recipes(user_id,recipe_name,description,source_url,source_type,ingredients,instructions,servings,prep_time_minutes,cook_time_minutes,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,is_favorite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-$st->bind_param('issssssdiidddddi', $uid, $name, $description, $sourceUrl, $sourceType, $ingredientsJson, $instructions, $servings, $prep, $cook, $cal, $pro, $carbs, $fat, $fiber, $fav);
+$st = $conn->prepare("INSERT INTO recipes(user_id,recipe_name,description,source_url,image_url,source_type,ingredients,instructions,servings,prep_time_minutes,cook_time_minutes,calories_per_serving,protein_per_serving,carbs_per_serving,fat_per_serving,fiber_per_serving,is_favorite) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+$st->bind_param('isssssssdiidddddi', $uid, $name, $description, $sourceUrl, $imageUrl, $sourceType, $ingredientsJson, $instructions, $servings, $prep, $cook, $cal, $pro, $carbs, $fat, $fiber, $fav);
 if (!$st->execute()) {
     $st->close();
     json_response(['success' => false, 'message' => 'Unable to save recipe to FitFuel.'], 500);
 }
 $recipeId = (int)$conn->insert_id;
 $st->close();
+$status=$enriched['nutrition_status']??'provided';if(!in_array($status,['provided','estimated','incomplete'],true))$status='incomplete';$nutritionNotes=$enriched['nutrition_notes']??'';$category=$in['meal_category']??'any';if(!in_array($category,['any','breakfast','lunch','dinner','snack'],true))$category='any';$types=ff_meal_types_clean($in['meal_types']??[]);if($types)$category=$types[0];$typeList=$types?implode(',',$types):null;
+$st=$conn->prepare('UPDATE recipes SET nutrition_status=?,nutrition_notes=?,meal_category=?,meal_types=? WHERE id=? AND user_id=?');$st->bind_param('ssssii',$status,$nutritionNotes,$category,$typeList,$recipeId,$uid);$st->execute();$st->close();
+if($imageUrl)ff_cache_recipe_image($conn,$recipeId,$imageUrl);
 
 $st = $conn->prepare("UPDATE shortcut_import_tokens SET last_used_at=NOW() WHERE id=?");
 $st->bind_param('i', $tokenId);
@@ -201,6 +216,8 @@ json_response([
     'success' => true,
     'message' => $name . ' was added to FitFuel.',
     'recipe_id' => $recipeId,
-    'recipe_name' => $name
+    'recipe_name' => $name,
+    'nutrition_status'=>$status,
+    'nutrition_notes'=>$nutritionNotes
 ]);
 ?>
