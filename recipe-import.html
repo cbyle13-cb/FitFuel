@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Import Recipe • FitFuel</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#f4f6f5;color:#17211b}.wrap{max-width:760px;margin:auto;padding:20px 16px 50px}.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 5px 24px #0001}h1{margin:0 0 6px;font-size:28px}.muted{color:#647069;margin-top:0}label{display:block;font-weight:650;margin:14px 0 6px}input,textarea{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #ccd3cf;border-radius:11px;background:#fff;color:#17211b}textarea{min-height:120px;resize:vertical}button{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:750;background:#1d6d4c;color:white;margin-top:12px}.secondary{background:#e8eeeb;color:#17211b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{margin:12px 0;padding:11px;border-radius:10px;background:#eef2f0}.hidden{display:none}.access{margin:14px 0;padding:12px;border:1px solid #ccd3cf;border-radius:11px}.access summary{font-weight:700;cursor:pointer}.access button{margin-top:10px}.source-note{font-size:13px;color:#647069;margin:8px 0 0}.photo-preview{display:block;width:100%;max-height:320px;object-fit:cover;border-radius:14px;margin-top:10px;background:#eef2f0}.photo-preview.hidden{display:none}@media(prefers-color-scheme:dark){body{background:#111714;color:#edf3ef}.card,input,textarea{background:#1b2420;color:#edf3ef}.card{box-shadow:none}.muted,.source-note{color:#aab7b0}.secondary{background:#303c36;color:#edf3ef}.status{background:#26312c}.photo-preview{background:#26312c}}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#f4f6f5;color:#17211b}.wrap{max-width:760px;margin:auto;padding:20px 16px 50px}.card{background:#fff;border-radius:18px;padding:18px;box-shadow:0 5px 24px #0001}h1{margin:0 0 6px;font-size:28px}.muted{color:#647069;margin-top:0}label{display:block;font-weight:650;margin:14px 0 6px}input,textarea{box-sizing:border-box;width:100%;font:inherit;padding:12px;border:1px solid #ccd3cf;border-radius:11px;background:#fff;color:#17211b}textarea{min-height:120px;resize:vertical}button{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:750;background:#1d6d4c;color:white;margin-top:12px}.secondary{background:#e8eeeb;color:#17211b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{margin:12px 0;padding:11px;border-radius:10px;background:#eef2f0}.hidden{display:none}.access{margin:14px 0;padding:12px;border:1px solid #ccd3cf;border-radius:11px}.access summary{font-weight:700;cursor:pointer}.access button{margin-top:10px}.source-note{font-size:13px;color:#647069;margin:8px 0 0}.photo-preview{display:block;width:100%;max-height:320px;object-fit:cover;border-radius:14px;margin-top:10px;background:#eef2f0}.photo-preview.hidden{display:none}.topbar{margin:0 0 10px}.back{display:inline-block;color:#1d6d4c;font-weight:750;text-decoration:none;padding:10px 4px}.status a{color:inherit;font-weight:700}@media(prefers-color-scheme:dark){.back{color:#7fd3a6}body{background:#111714;color:#edf3ef}.card,input,textarea{background:#1b2420;color:#edf3ef}.card{box-shadow:none}.muted,.source-note{color:#aab7b0}.secondary{background:#303c36;color:#edf3ef}.status{background:#26312c}.photo-preview{background:#26312c}}
 </style>
 </head>
-<body><main class="wrap"><section class="card">
+<body><main class="wrap"><nav class="topbar"><a id="backLink" class="back" href="./">‹ Back to FitFuel</a></nav><section class="card">
 <h1>Import Recipe</h1><p class="muted">Share a recipe webpage or send recipe JSON from ChatGPT. Review every field before saving it to FitFuel.</p>
 <div id="status" class="status">Ready to import.</div>
 <details class="access">
@@ -37,8 +37,8 @@
 <img id="imagePreview" class="photo-preview hidden" alt="Imported recipe preview" referrerpolicy="no-referrer">
 <button id="saveBtn">Save to FitFuel Recipes</button>
 <div id="saveStatus" class="status hidden" role="status" aria-live="polite"></div>
-<button id="backBtn" class="secondary" type="button" onclick="location.href='./'">Back to FitFuel</button>
 </div>
+<button id="backBtn" class="secondary" type="button" onclick="location.href='./'">Back to FitFuel</button>
 </section></main>
 <script>
 const $=id=>document.getElementById(id), status=$('status'); let current={};
@@ -72,7 +72,12 @@ async function enableImportKey(){
  btn.disabled=true;btn.textContent='Creating secure key…';keyMessage('Creating a recipe-import-only key…');
  try{
   const r=await fetch('API/shortcut_token.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({token_name:'iPhone Recipe Import Page'})});
-  const j=await r.json();
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401){
+   const box=$('keyStatus');box.classList.remove('hidden');
+   box.innerHTML='Please <a href="./?return=recipe-import.html">sign in to FitFuel</a>. You will come straight back here; then tap Enable again.';
+   btn.disabled=false;btn.textContent='Enable Password-Free Saves';return;
+  }
   if(!r.ok||!j.success||!j.import_token)throw new Error(j.message||'Could not create the access key.');
   localStorage.setItem(keyStorageName,j.import_token);
   keyMessage('Enabled. Future Shortcut recipes can be saved from this iPhone without signing in.');
