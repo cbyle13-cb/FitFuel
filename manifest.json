@@ -8,14 +8,16 @@
   "theme_color": "#111827",
   "icons": [
     {
-      "src": "./icons/icon-192.png",
+      "src": "./icons/fitfuel-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./icons/icon-512.png",
+      "src": "./icons/fitfuel-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "share_target": {
