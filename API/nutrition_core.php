@@ -13,12 +13,12 @@ function ff_targets(array $p, ?string $today=null): array {
     $sex=$p['sex']??'';$h=(float)($p['height_inches']??0);$w=(float)($p['current_weight']??0);
     if(!in_array($sex,['male','female'],true)||$h<36||$h>96||$w<50||$w>1000) throw new InvalidArgumentException('Set sex, height, and current weight in Settings.');
     $factors=['sedentary'=>1.2,'light'=>1.375,'moderate'=>1.55,'active'=>1.725,'extra_active'=>1.9];
-    $adjust=['fat_loss'=>-500,'fat_loss_fast'=>-1000,'maintenance'=>0,'muscle_gain'=>250];
+    $adjust=['fat_loss_slow'=>-250,'fat_loss'=>-500,'fat_loss_fast'=>-1000,'maintenance'=>0,'muscle_gain'=>250];
     $activity=$p['planner_activity']??'moderate';$goal=$p['planner_goal']??'maintenance';
     if(!isset($factors[$activity],$adjust[$goal])) throw new InvalidArgumentException('Choose an activity level and fitness goal.');
     if($teen)$goal='maintenance';
     $goalWeight=(float)($p['goal_weight']??0);
-    if(($goal==='fat_loss'||$goal==='fat_loss_fast')&&$goalWeight>0&&$w<=$goalWeight)$goal='maintenance';
+    if(in_array($goal,['fat_loss_slow','fat_loss','fat_loss_fast'],true)&&$goalWeight>0&&$w<=$goalWeight)$goal='maintenance';
     if($goal==='muscle_gain'&&$goalWeight>0&&$w>=$goalWeight)$goal='maintenance';
     $bmr=round(10*$w*.45359237+6.25*$h*2.54-5*$age+($sex==='male'?5:-161));
     $cal=ceil(max($bmr,round($bmr*$factors[$activity])+$adjust[$goal])/10)*10;
