@@ -14,3 +14,12 @@ test('goal timeline returns weeks and date',()=>assert.deepEqual(calc.goalTimeli
 test('one rep max returns rounded training loads',()=>assert.deepEqual(calc.oneRepMax(50,10),{max:65,training:{60:40,70:45,80:55,90:60}}));
 test('heart-rate zones use heart-rate reserve',()=>{const r=calc.heartRateZones(49,65);assert.equal(r.max,174);assert.deepEqual(r.zones.easy,{low:130,high:141})});
 test('invalid inputs are rejected',()=>{assert.throws(()=>calc.dailyTargets({}),/sex/);assert.throws(()=>calc.oneRepMax(50,20),/1–12/);assert.throws(()=>calc.goalTimeline(225,185,10),/2%/)});
+
+test('teens 13-17 get maintenance calories, 0.55 g/lb protein, and teen fiber; under 13 is refused',()=>{
+ const asOf=new Date('2026-10-30T12:00:00');
+ const teen=calc.dailyTargets({sex:'female',dateOfBirth:'2010-05-01',heightInches:65,weightPounds:130,activity:'moderate',goal:'fat_loss_fast',macroStyle:'strength'},asOf);
+ const adult=calc.dailyTargets({sex:'female',dateOfBirth:'2000-05-01',heightInches:65,weightPounds:130,activity:'moderate',goal:'maintenance',macroStyle:'strength'},asOf);
+ assert.equal(teen.teen,true);assert.equal(teen.protein,Math.round(130*.55));assert.equal(teen.fiber,26);assert.equal(teen.calories,Math.ceil(teen.tdee/10)*10);
+ assert.equal(adult.teen,false);
+ assert.throws(()=>calc.dailyTargets({sex:'male',dateOfBirth:'2016-01-01',heightInches:50,weightPounds:60,activity:'light',goal:'maintenance'},asOf),/13 and older/);
+});

@@ -24,22 +24,24 @@
     const sex=input.sex,age=ageOn(input.dateOfBirth,asOf),height=finite(input.heightInches),weight=finite(input.weightPounds);
     if(!['male','female'].includes(sex))throw Error('Select the sex used by the BMR formula.');
     if(age===null||age>120)throw Error('Enter a valid date of birth.');
-    if(age<18)throw Error('These formulas are for adults age 18 and older.');
+    if(age<13)throw Error('These formulas are for ages 13 and older. Ask a pediatrician to set targets for younger children.');
+    // Teens are still growing: maintenance only and ~0.55 g protein/lb, matching ff_targets on the server.
+    const teen=age<18;
     if(height===null||height<36||height>96||weight===null||weight<50||weight>1000)throw Error('Enter a valid height and current weight.');
     if(!Object.prototype.hasOwnProperty.call(activityFactors,input.activity))throw Error('Select an activity level.');
     if(!Object.prototype.hasOwnProperty.call(goalAdjustments,input.goal))throw Error('Select a goal.');
     const kg=weight*.45359237,cm=height*2.54,bmi=weight*703/(height*height);
     const bmr=Math.round(10*kg+6.25*cm-5*age+(sex==='male'?5:-161));
     const tdee=Math.round(bmr*activityFactors[input.activity]);
-    const calories=Math.ceil(Math.max(bmr,tdee+goalAdjustments[input.goal])/10)*10;
+    const calories=Math.ceil(Math.max(bmr,tdee+(teen?0:goalAdjustments[input.goal]))/10)*10;
     const strengthFocused=input.macroStyle!=='balanced';
     const proteinRate=strengthFocused&&['fat_loss_slow','fat_loss','fat_loss_fast','muscle_gain'].includes(input.goal)?.9:.7;
-    const protein=Math.round(weight*proteinRate);
+    const protein=Math.round(weight*(teen?.55:proteinRate));
     const fatPercent=input.macroStyle==='lower_carb'?.30:.25;
     const fat=Math.round(calories*fatPercent/9);
     const carbs=Math.max(0,Math.round((calories-protein*4-fat*9)/4));
-    const fiber=age>50?(sex==='male'?30:21):(sex==='male'?38:25);
-    return {age,bmi:Number(bmi.toFixed(1)),bmiCategory:bmiCategory(bmi),bmr,tdee,calories,protein,carbs,fat,fiber,healthyWeight:healthyWeightRange(height)};
+    const fiber=teen?(sex==='male'?(age<14?31:38):26):(age>50?(sex==='male'?30:21):(sex==='male'?38:25));
+    return {age,teen,bmi:Number(bmi.toFixed(1)),bmiCategory:age<20?'Use BMI-for-age guidance under age 20':bmiCategory(bmi),bmr,tdee,calories,protein,carbs,fat,fiber,healthyWeight:healthyWeightRange(height)};
   }
   function hydration(weightPounds,exerciseMinutes=0){
     const weight=finite(weightPounds),minutes=finite(exerciseMinutes);

@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="./manifest.json?v=fitfuel-icon-1">
 <title>FitFuel Shortcut Setup</title>
 <style>
-:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#10131a;color:#f7f8fb}.wrap{max-width:640px;margin:0 auto;padding:32px 20px 60px}.card{background:#1b202b;border:1px solid #303746;border-radius:18px;padding:22px;box-shadow:0 12px 36px rgba(0,0,0,.25)}h1{font-size:28px;margin:0 0 10px}p{line-height:1.5;color:#cbd2df}.btn{appearance:none;border:0;border-radius:12px;padding:14px 18px;font-size:17px;font-weight:700;background:#56c271;color:#07120a;width:100%;margin-top:10px}.btn.secondary{background:#2d3544;color:#fff}.token{display:none;margin-top:18px;padding:14px;border-radius:12px;background:#0e1117;border:1px solid #394154;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.status{margin-top:14px;min-height:24px}.small{font-size:13px;color:#9aa5b5}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}body{margin:0;background:#10131a;color:#f7f8fb}.wrap{max-width:640px;margin:0 auto;padding:32px 20px 60px}.card{background:#1b202b;border:1px solid #303746;border-radius:18px;padding:22px;box-shadow:0 12px 36px rgba(0,0,0,.25)}h1{font-size:28px;margin:0 0 10px}p{line-height:1.5;color:#cbd2df}.btn{appearance:none;border:0;border-radius:12px;padding:14px 18px;font-size:17px;font-weight:700;background:#56c271;color:#07120a;width:100%;margin-top:10px}.btn.secondary{background:#2d3544;color:#fff}.token{display:none;margin-top:18px;padding:14px;border-radius:12px;background:#0e1117;border:1px solid #394154;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}.status{margin-top:14px;min-height:24px}.small{font-size:13px;color:#9aa5b5}.topbar{display:flex;align-items:center;margin:0 0 14px}.back{display:inline-block;color:#56c271;font-size:17px;font-weight:700;text-decoration:none;padding:10px 4px}.token{-webkit-user-select:all;user-select:all;cursor:text}.status a{color:#56c271}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <nav class="topbar"><a id="backLink" class="back" href="./">‹ Back to FitFuel</a></nav>
   <div class="card">
     <h1>FitFuel Recipe Shortcut</h1>
     <p>Create a private import key for the iPhone Shortcut. The new Shortcut sends only the shared webpage URL to FitFuel; extraction now runs securely on the server without ChatGPT.</p>
@@ -17,6 +19,7 @@
     <div id="status" class="status"></div>
     <div id="tokenBox" class="token"></div>
     <button id="copyBtn" class="btn secondary" style="display:none">Copy Import Key</button>
+    <a id="doneLink" class="btn secondary" href="./" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">Done — Back to FitFuel</a>
     <p class="small">Keep this key private. Configure the Share Sheet for URLs, Safari Web Pages, and Text. Send <b>import_key</b>, <b>url</b>, and <b>text</b> as JSON to <b>API/shortcut_recipe.php</b>. Chrome and Safari use the URL; Facebook and Instagram can fall back to shared caption text. Existing structured-recipe Shortcuts remain supported.</p>
   </div>
 </div>
@@ -31,14 +34,20 @@ createBtn.addEventListener('click',async()=>{
   try{
     const r=await fetch('API/shortcut_token.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({token_name:'iPhone Recipe Shortcut'})});
     const j=await r.json();
-    if(!r.ok||!j.success){if(r.status===401){status.innerHTML='Please <a href="./">log in to FitFuel</a> first, then return to this page.';}else{status.textContent=j.message||'Unable to create key.';}return;}
+    if(!r.ok||!j.success){if(r.status===401){status.innerHTML='Please <a href="./?return=shortcut-setup.html">log in to FitFuel</a>. You will come straight back here to create the key.';}else{status.textContent=j.message||'Unable to create key.';}return;}
     token=j.import_token||'';tokenBox.textContent=token;tokenBox.style.display='block';copyBtn.style.display='block';status.textContent='Import key created. Copy it and keep this page open while we update your Shortcut.';
   }catch(e){status.textContent='Could not connect to FitFuel. Try again in a moment.';}
   finally{createBtn.disabled=false;}
 });
 copyBtn.addEventListener('click',async()=>{
   if(!token)return;
-  try{await navigator.clipboard.writeText(token);status.textContent='Import key copied.';}catch(e){status.textContent='Press and hold the key above, then choose Copy.';}
+  try{await navigator.clipboard.writeText(token);status.textContent='Import key copied.';}
+  catch(e){
+    // Fallback for iPhone Home Screen apps where the async clipboard is unavailable.
+    const sel=window.getSelection(),range=document.createRange();range.selectNodeContents(tokenBox);sel.removeAllRanges();sel.addRange(range);
+    let ok=false;try{ok=document.execCommand('copy');}catch(_){}
+    status.textContent=ok?'Import key copied.':'Press and hold the key above, then choose Copy.';
+  }
 });
 </script>
 </body>
